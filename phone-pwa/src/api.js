@@ -1,5 +1,7 @@
-const BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const RAW_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "https://elderallbackend.onrender.com";
+
+const BASE_URL = RAW_BASE_URL.replace(/\/$/, "");
 
 async function postJson(path, payload) {
   const response = await fetch(`${BASE_URL}${path}`, {

@@ -60,7 +60,7 @@ export function createMotionMonitor({
     const now = Date.now();
     if (now < cooldownUntil) return;
 
-    const acc = event.accelerationIncludingGravity || event.acceleration || {};
+    const acc = event.acceleration || event.accelerationIncludingGravity || {};
     const rot = event.rotationRate || {};
 
     const accMagnitude = magnitude(acc.x, acc.y, acc.z);

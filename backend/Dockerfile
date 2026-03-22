@@ -10,3 +10,4 @@ COPY . .
 EXPOSE 4000
 
 CMD ["npm", "start"]
+RUN npm install -g vite

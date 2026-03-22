@@ -6,13 +6,34 @@ import motionRoutes from "./routes/motionRoutes.js";
 import { setWebSocketServer } from "./services/incidentService.js";
 
 const app = express();
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
 
-app.use(cors());
+const allowedOrigins = [
+  "http://localhost:5174",
+  "http://localhost:5173",
+  process.env.PHONE_PWA_URL,
+  process.env.GUARDIAN_UI_URL
+].filter(Boolean);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
+    credentials: true
+  })
+);
+
 app.use(express.json());
 
 app.get("/health", (_req, res) => {
-  res.json({ ok: true, service: "drop-detection-backend" });
+  res.json({
+    ok: true,
+    service: "drop-detection-backend",
+    allowedOrigins
+  });
 });
 
 app.use("/motion", motionRoutes);
@@ -32,5 +53,5 @@ wss.on("connection", (ws) => {
 });
 
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`Backend listening on http://0.0.0.0:${PORT}`);
+  console.log(`Backend listening on port ${PORT}`);
 });

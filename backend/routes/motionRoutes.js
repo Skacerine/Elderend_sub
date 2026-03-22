@@ -61,7 +61,7 @@ router.post("/simulate-drop", (req, res) => {
   res.json({ detected: true, incident });
 });
 
-router.get("/incidents", (req, res) => {
+router.get("/incidents", (_req, res) => {
   res.json(getIncidents());
 });
 

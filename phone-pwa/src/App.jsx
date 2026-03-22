@@ -50,13 +50,17 @@ export default function App() {
       <h1>Elderly Phone PWA</h1>
       <p>Status: {status}</p>
 
-      <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+      <div style={{ display: "flex", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
         <button onClick={handleStart}>Start Monitoring</button>
         <button onClick={handleStop}>Stop Monitoring</button>
         <button onClick={handleSimulateDrop}>Simulate Drop</button>
       </div>
 
-      <pre style={{ background: "#f3f4f6", padding: 16, borderRadius: 8 }}>
+      <p>
+        Open this on a phone browser, then optionally add it to the home screen.
+      </p>
+
+      <pre style={{ background: "#f3f4f6", padding: 16, borderRadius: 8, whiteSpace: "pre-wrap" }}>
         {JSON.stringify(lastResponse, null, 2)}
       </pre>
     </div>

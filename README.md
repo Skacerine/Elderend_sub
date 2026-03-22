@@ -1,401 +1,145 @@
 # Elderall Phone Drop Detection System
 
-A comprehensive system for detecting falls in elderly populations using smartphone motion sensors. The system combines real-time motion analysis on the user's phone with a guardian dashboard for immediate alert notifications.
+A simple system that helps protect elderly people by detecting when they might have fallen using their smartphone.
 
-## 🏗 Project Architecture
+## What It Does
 
-```
-├── backend/                    # Node.js microservice (Express + WebSocket)
-│   ├── server.js               # Express app with WS server
-│   ├── routes/                 # API endpoints
-│   ├── services/               # Drop detection & incident management
-│   └── store/                  # In-memory incident storage
-│
-├── phone-pwa/                  # React PWA (elderly's phone)
-│   ├── src/
-│   │   ├── App.jsx             # Main UI with monitoring controls
-│   │   ├── motionSensor.js     # DeviceMotionEvent handler & feature extraction
-│   │   └── api.js              # HTTP client for backend communication
-│   └── public/sw.js            # Service Worker for offline capability
-│
-└── guardian-ui/                # React dashboard (guardian's browser)
-    └── src/
-        ├── App.jsx             # Live alert feed
-        ├── socket.js           # WebSocket connection handler
-        └── main.jsx            # Entry point
-```
+- **Phone App**: Runs on the elderly person's phone and watches for sudden movements
+- **Guardian Dashboard**: Shows alerts on a computer or tablet when a fall is detected
+- **Backend Service**: Processes the motion data and sends alerts instantly
 
-## 🎯 System Overview
+## Quick Setup (5 Minutes)
 
-### Backend Microservice (Port 4000)
-Handles motion data analysis, incident detection, and real-time alert broadcasting.
-
-**Key Features:**
-- REST API for motion sample submission
-- Drop risk scoring algorithm (0-100 scale)
-- WebSocket server for live incident streaming
-- In-memory incident store (max 100 incidents)
-- Simulated drop endpoint for testing
-
-**Drop Detection Logic:**
-- Free-fall detection: Z-axis acceleration < -8.0 m/s²
-- Impact detection: Peak acceleration > 20 m/s²
-- Rotation analysis: Peak rotation rate > 250°/s
-- Post-impact stillness: Low motion variance after impact
-
-### Phone PWA (Port 5173)
-Lightweight Progressive Web App running on elderly user's phone.
-
-**Features:**
-- Real-time device motion monitoring
-- 3-second sliding window for feature extraction
-- Automatic motion anomaly detection
-- Sends flagged motion patterns to backend
-- One-tap emergency drop simulation for testing
-- Service Worker for offline PWA support
-
-### Guardian UI Dashboard (Port 5174)
-Real-time monitoring dashboard for guardians/caregivers.
-
-**Features:**
-- WebSocket connection to backend for live alerts
-- Color-coded incident display
-- Full incident details (timestamp, severity, motion features)
-- Scrollable alert history
-- Automatic connection management with reconnection fallback
-
----
-
-## ⚡ Quick Start Guide (5 Minutes)
-
-### Step 1: Clone & Install Dependencies
+### 1. Install Everything
 ```bash
-# Install backend dependencies
-cd backend
-npm install
+# Install backend
+cd backend && npm install
 
-# In a new terminal, install phone PWA dependencies
-cd ../phone-pwa
-npm install
+# Install phone app
+cd ../phone-pwa && npm install
 
-# In another terminal, install guardian UI dependencies
-cd ../guardian-ui
-npm install
+# Install guardian dashboard
+cd ../guardian-ui && npm install
 ```
 
-### Step 2: Start the Backend Microservice (Terminal 1)
+### 2. Start the System
 ```bash
-cd backend
-npm run dev
-# Output: Backend listening on http://localhost:4000
+# Terminal 1: Start backend
+cd backend && npm run dev
+
+# Terminal 2: Start phone app
+cd ../phone-pwa && npm run dev
+
+# Terminal 3: Start guardian dashboard
+cd ../guardian-ui && npm run dev
 ```
 
-### Step 3: Start the Phone PWA (Terminal 2)
-```bash
-cd phone-pwa
-npm run dev
-# Output: VITE v6.0.0 ready in 123 ms
-# Open: http://localhost:5173
+### 3. Open in Browser
+- Phone App: http://localhost:5173
+- Guardian Dashboard: http://localhost:5174
+
+## 5. How to run it
+
+From project root:
+
+```
+docker compose up --build
 ```
 
-### Step 4: Start the Guardian Dashboard (Terminal 3)
-```bash
-cd guardian-ui
-npm run dev
-# Output: VITE v6.0.0 ready in 123 ms
-# Open: http://localhost:5174
+Then:
+
+Guardian UI on laptop: http://localhost:5173
+Phone PWA on phone: http://YOUR_LAPTOP_IP:5174
+
+Example:
+
+http://192.168.1.10:5174
+
+Use ipconfig on Windows to find your laptop IPv4 address.
+
+## 6. How to test it
+
+On laptop:
+
+- open Guardian UI
+- click Enable Alert Sound
+
+On phone:
+
+- open Phone PWA using laptop IP
+- tap Start Monitoring
+- or tap Simulate Drop
+
+Expected result:
+
+- backend receives motion event
+- backend detects drop
+- Guardian UI gets live alert
+- alarm plays
+- vibration attempts if supported
+
+## How It Works
+
+The phone app uses the phone's built-in motion sensors to detect:
+- Sudden drops or falls
+- Strong impacts
+- Quick spinning movements
+- Being still after a possible fall
+
+When something suspicious is detected, it sends an alert to the guardian dashboard immediately.
+
+## Technical Details
+
+- **Backend**: Node.js server with WebSocket for real-time alerts
+- **Phone App**: React Progressive Web App (works like a native app)
+- **Guardian Dashboard**: React web app with live alerts
+- **Detection**: Simple scoring system (0-100) based on motion patterns
+
+## Requirements
+
+- Node.js 18 or newer
+- Modern web browser
+- Phone with motion sensors (most smartphones)
+
+## Project Structure
+
+```
+├── backend/          # Server that processes alerts
+├── phone-pwa/        # App for elderly person's phone
+└── guardian-ui/      # Dashboard for caregivers
 ```
 
-### Step 5: Test the System
-1. **Open Phone PWA** at `http://localhost:5173`
-2. Click **"Start Monitoring"** to begin motion tracking
-3. Click **"Simulate Drop"** to test drop detection
-4. **Open Guardian Dashboard** at `http://localhost:5174` in another browser
-5. Watch for **RED ALERT** to appear when drop is detected
-6. Check response JSON on phone PWA showing incident details
+## Project Review
 
-### ✅ System is Now Running
-- Backend API: `http://localhost:4000`
-- Phone PWA: `http://localhost:5173`
-- Guardian Dashboard: `http://localhost:5174`
+### ✅ Strengths
+- **Well-structured**: Clear separation between backend, phone app, and guardian dashboard
+- **Real-time alerts**: WebSocket implementation provides instant notifications
+- **Cross-platform**: Works on any device with a modern web browser
+- **Simple deployment**: Docker setup makes it easy to run anywhere
+- **Progressive Web App**: Phone app can be installed like a native app
 
----
+### ⚠️ Areas for Improvement
+- **Production readiness**: Docker containers use development servers instead of production builds
+- **Data persistence**: Currently uses in-memory storage (data lost on restart)
+- **Security**: No authentication or authorization implemented
+- **Scalability**: Single backend instance, no load balancing
+- **Testing**: Limited automated tests for the detection algorithm
 
-## 🚀 Getting Started
+### 🔧 Technical Notes
+- **Detection accuracy**: The scoring system is basic but effective for proof-of-concept
+- **Browser compatibility**: Requires DeviceMotionEvent support (most modern phones)
+- **Network dependency**: Phone app needs internet connection to send alerts
+- **Battery impact**: Continuous motion monitoring may drain phone battery faster
 
-### Prerequisites
-- Node.js 18+ (LTS recommended)
-- npm 9+
-- Modern browser with DeviceMotionEvent support (for phones)
+### 📈 Recommended Next Steps
+1. Add user authentication and data encryption
+2. Implement persistent database storage (MongoDB/PostgreSQL)
+3. Add automated tests for detection accuracy
+4. Optimize battery usage with smarter monitoring intervals
+5. Add offline alert queuing for when network is unavailable
+6. Implement multi-device support for multiple elderly users
 
-### Installation
-
-#### Backend
-```bash
-cd backend
-npm install
-```
-
-#### Phone PWA
-```bash
-cd phone-pwa
-npm install
-```
-
-#### Guardian UI
-```bash
-cd guardian-ui
-npm install
-```
-
----
-
-## 🏃 Running the System
-
-### Start Backend Microservice
-```bash
-cd backend
-npm run dev
-# Listens on http://localhost:4000
-```
-
-### Start Phone PWA
-```bash
-cd phone-pwa
-npm run dev
-# dev server on http://localhost:5173
-# Open on phone or mobile device browser
-```
-
-### Start Guardian Dashboard
-```bash
-cd guardian-ui
-npm run dev
-# dev server on http://localhost:5174
-```
-
----
-
-## 📡 API Documentation
-
-### REST Endpoints
-
-#### Health Check
-```
-GET /health
-```
-Returns service status.
-
-**Response:**
-```json
-{
-  "ok": true,
-  "service": "drop-detection-backend"
-}
-```
-
-#### Submit Motion Sample
-```
-POST /motion/sample
-
-Body:
-{
-  "elderlyId": "E001",
-  "deviceId": "PHONE_01",
-  "timestamp": "2026-03-22T10:30:00Z",
-  "features": {
-    "minAcceleration": 1.5,
-    "peakAcceleration": 22.3,
-    "peakRotationRate": 280,
-    "postImpactStillnessMs": 2500
-  }
-}
-```
-
-**Response (Drop Detected):**
-```json
-{
-  "detected": true,
-  "incident": {
-    "incidentId": "INC-1711095000000",
-    "elderlyId": "E001",
-    "deviceId": "PHONE_01",
-    "type": "drop_alert",
-    "severity": "HIGH",
-    "score": 95,
-    "timestamp": "2026-03-22T10:30:00.123Z",
-    "message": "Possible fall detected from device motion pattern.",
-    "features": { ... }
-  },
-  "timestampReceived": "2026-03-22T10:30:00.456Z"
-}
-```
-
-#### Simulate Drop Alert
-```
-POST /motion/simulate-drop
-
-Body (optional):
-{
-  "elderlyId": "E001",
-  "deviceId": "PHONE_01"
-}
-```
-
-#### Get All Incidents
-```
-GET /motion/incidents
-```
-
-Returns array of all stored incidents.
-
-#### Get Latest Incident for User
-```
-GET /motion/incidents/latest/:elderlyId
-```
-
----
-
-### WebSocket Connection
-
-**URL:** `ws://localhost:4000`
-
-**Connect Message (Server → Client):**
-```json
-{
-  "type": "system",
-  "data": {
-    "message": "Connected to drop alert stream"
-  }
-}
-```
-
-**Drop Alert Message (Server → Client):**
-```json
-{
-  "type": "drop_alert",
-  "data": {
-    "incidentId": "INC-1711095000000",
-    "elderlyId": "E001",
-    "deviceId": "PHONE_01",
-    "severity": "HIGH",
-    "score": 95,
-    "timestamp": "2026-03-22T10:30:00.123Z",
-    ...
-  }
-}
-```
-
----
-
-## 📊 Drop Risk Scoring
-
-The system scores motion data on a **0–100 scale** with severity levels:
-
-| Score  | Severity | Action                    |
-|--------|----------|--------------------------|
-| 0-44   | LOW      | No alert, continue monitoring |
-| 45-69  | MEDIUM   | Log incident, monitor elderly |
-| 70+    | HIGH     | **Immediate alert to guardians** |
-
-**Scoring Breakdown:**
-- Free-fall detection (Z < -8.0): +25 points
-- Rotation anomaly (rot > 250°/s): +20 points
-- Impact detected (acc > 20 m/s²): +35 points
-- Post-impact stillness (variance < 1.5): +20 points
-
----
-
-## 🧪 Testing
-
-### Test Drop Detection with Phone PWA
-1. Open Phone PWA on Android/iOS device
-2. Tap **"Simulate Drop"** button
-3. Check Guardian UI Dashboard → should see alert within seconds
-
-### Manual API Test
-```bash
-# Test backend health
-curl http://localhost:4000/health
-
-# Trigger simulated drop
-curl -X POST http://localhost:4000/motion/simulate-drop \
-  -H "Content-Type: application/json" \
-  -d '{}'
-
-# View all incidents
-curl http://localhost:4000/motion/incidents
-```
-
----
-
-## 🔧 Configuration
-
-### Backend (server.js)
-- **PORT**: `4000` (configurable via environment variable)
-- **Max incidents stored**: `100` (incidentStore.js)
-
-### Phone PWA (motionSensor.js)
-- **Sample window**: 3 seconds
-- **Trigger thresholds**:
-  - Min acceleration < 2 m/s²
-  - Peak acceleration > 18 m/s²
-  - Peak rotation > 200°/s
-
-### Guardian UI (socket.js)
-- **WebSocket URL**: `ws://localhost:4000`
-
----
-
-## 📝 Features & Capabilities
-
-✅ Real-time motion monitoring on elderly's phone  
-✅ Automatic drop/fall detection using ML-inspired scoring  
-✅ Instant WebSocket alerts to guardians  
-✅ PWA support (works offline via Service Worker)  
-✅ Persistent incident history (in-memory)  
-✅ Severity classification (LOW/MEDIUM/HIGH)  
-✅ Test simulation endpoints  
-✅ CORS-enabled for cross-origin requests  
-
----
-
-## 🛠 Development Notes
-
-### Module Type
-All source files use **ES6 modules** (`import`/`export`). Backend requires `"type": "module"` in `package.json`.
-
-### Data Flow
-1. **Phone** collects accelerometer + gyroscope data
-2. **motionSensor.js** extracts motion features from 3-sec window
-3. **Phone PWA** sends features to backend `/motion/sample`
-4. **Backend** scores features using `scoreDropRisk()`
-5. If score ≥ 70, incident is created & broadcasted via WS
-6. **Guardian UI** receives alert & displays to user
-
-### Storage
-- All incidents stored **in-memory** (resets on server restart)
-- Production deployment would use a database (MongoDB, PostgreSQL, etc.)
-
----
-
-## 📦 Dependencies
-
-### Backend
-- `express` ^4.19.2 – Web framework
-- `cors` ^2.8.5 – CORS middleware
-- `ws` ^8.18.0 – WebSocket server
-
-### Phone PWA & Guardian UI
-- `react` ^19.0.0 – UI library
-- `react-dom` ^19.0.0 – React DOM binding
-- `vite` ^6.0.0 – Build tool (devDependency)
-
----
-
-## 📄 License & Attribution
-
-ESD Project (Elderall) – SMU Y2 SEM2
+This is a solid foundation for an elderly fall detection system with good real-time capabilities and easy setup.
 
 ---
 

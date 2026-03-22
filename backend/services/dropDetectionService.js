@@ -8,10 +8,10 @@
     postImpactStillnessMs = 0
   } = features || {};
 
-  if (minAcceleration < 2) score += 25;          // possible free-fall
-  if (peakRotationRate > 250) score += 20;       // tumble
-  if (peakAcceleration > 20) score += 35;        // impact
-  if (postImpactStillnessMs > 2000) score += 20; // stillness after impact
+  if (minAcceleration < 2) score += 25;
+  if (peakRotationRate > 250) score += 20;
+  if (peakAcceleration > 20) score += 35;
+  if (postImpactStillnessMs > 2000) score += 20;
 
   let severity = "LOW";
   if (score >= 70) severity = "HIGH";

@@ -78,16 +78,21 @@ export default function App() {
     }
   }
 
-  async function handleEnableAudio() {
+    async function handleEnableAudio() {
     if (!audioRef.current) return;
 
     try {
+      audioRef.current.muted = false;
       audioRef.current.volume = 1;
+      audioRef.current.loop = true;
       audioRef.current.currentTime = 0;
+
       await audioRef.current.play();
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+
       setAudioEnabled(true);
+      console.log("Audio unlocked successfully");
     } catch (error) {
       console.error("Audio enable failed:", error);
       alert("Browser blocked audio. Tap the page again and retry.");
@@ -174,7 +179,7 @@ export default function App() {
         <button onClick={clearActiveAlert}>Clear Active Alert</button>
       </div>
 
-      <audio ref={audioRef} preload="auto" loop>
+      <audio ref={audioRef} preload="auto" loop playsInline>
         <source src="/alarm.mp3" type="audio/mpeg" />
       </audio>
 

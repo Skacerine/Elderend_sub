@@ -22,6 +22,11 @@ export default function App() {
   const [alarmActive, setAlarmActive] = useState(false);
 
   const audioRef = useRef(null);
+  const audioEnabledRef = useRef(false);
+
+  useEffect(() => {
+    audioEnabledRef.current = audioEnabled;
+  }, [audioEnabled]);
 
   useEffect(() => {
     const ws = connectToAlerts({
@@ -68,12 +73,12 @@ export default function App() {
 
   function playAlarm() {
     console.log("playAlarm called", {
-      audioEnabled,
+      audioEnabled: audioEnabledRef.current,
       hasAudioRef: !!audioRef.current,
       visibilityState: document.visibilityState
     });
 
-    if (!audioEnabled) {
+    if (!audioEnabledRef.current) {
       console.warn("Alarm not played: audio not enabled");
       alert("Alarm not played: audio not enabled");
       return;

@@ -43,7 +43,7 @@ export default function App() {
     return () => {
       ws.close();
     };
-  }, [audioEnabled]);
+  }, []);
 
   function triggerGuardianAlert() {
     setAlarmActive(true);

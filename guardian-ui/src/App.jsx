@@ -52,11 +52,23 @@ export default function App() {
   }
 
   function playAlarm() {
-    if (!audioEnabled || !audioRef.current) return;
+  if (!audioEnabled) {
+    console.warn("Alarm not played: audio not enabled");
+    return;
+  }
 
+  if (!audioRef.current) {
+    console.warn("Alarm not played: audio element missing");
+    return;
+    }
+
+    audioRef.current.muted = false;
+    audioRef.current.volume = 1;
     audioRef.current.currentTime = 0;
+
     audioRef.current.play().catch((error) => {
       console.error("Alarm playback blocked:", error);
+      alert("Alarm sound was blocked by the browser. Tap 'Click to Enable Sound' again.");
     });
   }
 

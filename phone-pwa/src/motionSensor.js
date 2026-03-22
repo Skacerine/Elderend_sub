@@ -13,7 +13,7 @@ function estimateStillness(windowSamples) {
     recent.reduce((sum, s) => sum + Math.pow(s.accMagnitude - avg, 2), 0) /
     recent.length;
 
-  return variance < 2.5 ? 3000 : 0;
+  return variance < 3 ? 3000 : 0;
 }
 
 export function createMotionMonitor({
@@ -25,6 +25,36 @@ export function createMotionMonitor({
   let active = false;
   let samples = [];
   let cooldownUntil = 0;
+  let pendingAnalysis = null;
+
+  function buildFeatures(now) {
+    const recentSamples = samples.filter((s) => now - s.timestamp < 3000);
+
+    if (recentSamples.length === 0) {
+      return null;
+    }
+
+    const accValues = recentSamples.map((s) => s.accMagnitude);
+    const rotValues = recentSamples.map((s) => s.rotMagnitude);
+
+    return {
+      minAcceleration: Math.min(...accValues),
+      peakAcceleration: Math.max(...accValues),
+      peakRotationRate: Math.max(...rotValues),
+      postImpactStillnessMs: estimateStillness(recentSamples)
+    };
+  }
+
+  function isSuspicious(features) {
+    if (!features) return false;
+
+    return (
+      features.minAcceleration < 6 ||
+      features.peakAcceleration > 11 ||
+      features.peakRotationRate > 90 ||
+      features.postImpactStillnessMs > 1000
+    );
+  }
 
   function handleMotion(event) {
     const now = Date.now();
@@ -44,29 +74,36 @@ export function createMotionMonitor({
 
     samples = samples.filter((s) => now - s.timestamp < 3000);
 
-    const accValues = samples.map((s) => s.accMagnitude);
-    const rotValues = samples.map((s) => s.rotMagnitude);
+    const quickFeatures = buildFeatures(now);
 
-    const features = {
-      minAcceleration: Math.min(...accValues),
-      peakAcceleration: Math.max(...accValues),
-      peakRotationRate: Math.max(...rotValues),
-      postImpactStillnessMs: estimateStillness(samples)
-    };
+    if (!isSuspicious(quickFeatures)) {
+      return;
+    }
 
-    const suspicious =
-      features.minAcceleration < 5 ||
-      features.peakAcceleration > 12 ||
-      features.peakRotationRate > 100 ||
-      features.postImpactStillnessMs > 1000;
+    // If we already scheduled analysis, do not schedule again.
+    // This lets us collect a fuller drop sequence before sending.
+    if (pendingAnalysis) {
+      return;
+    }
 
-    if (suspicious) {
-      cooldownUntil = now + 3000;
-      Promise.resolve(onFeatureReady?.(features)).catch((error) => {
+    pendingAnalysis = window.setTimeout(() => {
+      const analysisTime = Date.now();
+      const finalFeatures = buildFeatures(analysisTime);
+
+      pendingAnalysis = null;
+
+      if (!finalFeatures) {
+        return;
+      }
+
+      cooldownUntil = analysisTime + 3000;
+
+      Promise.resolve(onFeatureReady?.(finalFeatures)).catch((error) => {
         onError?.(error.message || "Failed to process motion event.");
       });
+
       samples = [];
-    }
+    }, 450);
   }
 
   async function start() {
@@ -100,6 +137,12 @@ export function createMotionMonitor({
     if (!active) return;
 
     window.removeEventListener("devicemotion", handleMotion);
+
+    if (pendingAnalysis) {
+      window.clearTimeout(pendingAnalysis);
+      pendingAnalysis = null;
+    }
+
     active = false;
     samples = [];
     onStop?.();

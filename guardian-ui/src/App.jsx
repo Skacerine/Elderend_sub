@@ -149,8 +149,14 @@ export default function App() {
       </div>
 
       <div style={{ display: "flex", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
-        <button onClick={handleEnableAudio}>
-          {audioEnabled ? "Alert Sound Enabled" : "Enable Alert Sound"}
+        <button
+          onClick={handleEnableAudio}
+          style={{
+            background: audioEnabled ? "#16a34a" : "#dc2626",
+            color: "white"
+          }}
+        >
+          {audioEnabled ? "🔊 Sound Enabled" : "🔇 Click to Enable Sound"}
         </button>
         <button onClick={handleStopAlarm}>Stop Alarm</button>
         <button onClick={clearActiveAlert}>Clear Active Alert</button>

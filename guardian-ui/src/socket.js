@@ -1,6 +1,8 @@
+const WS_URL =
+  import.meta.env.VITE_WS_BASE_URL || "ws://localhost:4000";
+
 export function connectToAlerts({ onMessage, onOpen, onClose, onError }) {
-  const host = window.location.hostname;
-  const ws = new WebSocket(`ws://${host}:4000`);
+  const ws = new WebSocket(WS_URL);
 
   ws.onmessage = (event) => {
     try {

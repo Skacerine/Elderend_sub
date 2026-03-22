@@ -1,68 +1,86 @@
-import { useMemo, useState } from "react";
-import { createMotionMonitor } from "./motionSensor";
-import { sendMotionSample, simulateDrop } from "./api";
+import { useEffect, useState, useCallback } from "react";
+
+const MONITORING_KEY = "monitoringEnabled";
 
 export default function App() {
-  const [status, setStatus] = useState("Idle");
-  const [lastResponse, setLastResponse] = useState(null);
+  const [isMonitoring, setIsMonitoring] = useState(false);
+  const [permissionState, setPermissionState] = useState("unknown");
+  const [statusMessage, setStatusMessage] = useState("Checking app status...");
 
-  const elderlyId = "E001";
-  const deviceId = "PHONE_01";
-
-  const monitor = useMemo(() => {
-    return createMotionMonitor({
-      onFeatureReady: async (features) => {
-        setStatus("Motion anomaly detected. Sending sample...");
-        const result = await sendMotionSample({
-          elderlyId,
-          deviceId,
-          timestamp: new Date().toISOString(),
-          features
-        });
-        setLastResponse(result);
-        setStatus(result.detected ? "Possible drop detected" : "Monitoring");
-      }
-    });
+  const handleMotion = useCallback((event) => {
+    // your existing fall detection logic here
   }, []);
 
-  async function handleStart() {
+  const startMonitoring = useCallback(() => {
+    window.addEventListener("devicemotion", handleMotion);
+    setIsMonitoring(true);
+    localStorage.setItem(MONITORING_KEY, "true");
+    setStatusMessage("Monitoring is active.");
+  }, [handleMotion]);
+
+  const stopMonitoring = useCallback(() => {
+    window.removeEventListener("devicemotion", handleMotion);
+    setIsMonitoring(false);
+    localStorage.setItem(MONITORING_KEY, "false");
+    setStatusMessage("Monitoring is paused.");
+  }, [handleMotion]);
+
+  const requestMotionPermissionAndStart = useCallback(async () => {
     try {
-      await monitor.start();
-      setStatus("Monitoring");
+      if (
+        typeof DeviceMotionEvent !== "undefined" &&
+        typeof DeviceMotionEvent.requestPermission === "function"
+      ) {
+        const result = await DeviceMotionEvent.requestPermission();
+        if (result === "granted") {
+          setPermissionState("granted");
+          startMonitoring();
+        } else {
+          setPermissionState("denied");
+          setStatusMessage("Motion permission was denied.");
+        }
+      } else {
+        setPermissionState("granted");
+        startMonitoring();
+      }
     } catch (error) {
-      setStatus(error.message);
+      setPermissionState("denied");
+      setStatusMessage("Unable to access motion sensors.");
     }
-  }
+  }, [startMonitoring]);
 
-  function handleStop() {
-    monitor.stop();
-    setStatus("Stopped");
-  }
+  useEffect(() => {
+    const wasEnabled = localStorage.getItem(MONITORING_KEY) === "true";
 
-  async function handleSimulateDrop() {
-    const result = await simulateDrop({ elderlyId, deviceId });
-    setLastResponse(result);
-    setStatus("Simulated drop sent");
-  }
+    if (wasEnabled) {
+      setStatusMessage("Restoring monitoring...");
+      requestMotionPermissionAndStart();
+    } else {
+      setStatusMessage("Monitoring is paused.");
+    }
+
+    return () => {
+      window.removeEventListener("devicemotion", handleMotion);
+    };
+  }, [handleMotion, requestMotionPermissionAndStart]);
 
   return (
-    <div style={{ fontFamily: "sans-serif", padding: 24 }}>
-      <h1>Elderly Phone PWA</h1>
-      <p>Status: {status}</p>
+    <div>
+      <h1>Elderall Phone App</h1>
+      <p>Status: {isMonitoring ? "Monitoring Active" : "Monitoring Paused"}</p>
+      <p>{statusMessage}</p>
 
-      <div style={{ display: "flex", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
-        <button onClick={handleStart}>Start Monitoring</button>
-        <button onClick={handleStop}>Stop Monitoring</button>
-        <button onClick={handleSimulateDrop}>Simulate Drop</button>
-      </div>
+      {!isMonitoring ? (
+        <button onClick={requestMotionPermissionAndStart}>
+          Enable Monitoring
+        </button>
+      ) : (
+        <button onClick={stopMonitoring}>Pause Monitoring</button>
+      )}
 
-      <p>
-        Open this on a phone browser, then optionally add it to the home screen.
-      </p>
-
-      <pre style={{ background: "#f3f4f6", padding: 16, borderRadius: 8, whiteSpace: "pre-wrap" }}>
-        {JSON.stringify(lastResponse, null, 2)}
-      </pre>
+      <button onClick={() => {/* your simulate drop logic */}}>
+        Simulate Drop
+      </button>
     </div>
   );
 }

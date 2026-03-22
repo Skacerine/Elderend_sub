@@ -9,10 +9,12 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 const allowedOrigins = [
-  "http://localhost:5174",
   "http://localhost:5173",
-  process.env.PHONE_PWA_URL,
-  process.env.GUARDIAN_UI_URL
+  "http://localhost:5174",
+  "https://guardianphonedropper.vercel.app",
+  "https://phonedropper9000-xi.vercel.app",
+  process.env.GUARDIAN_UI_URL,
+  process.env.PHONE_PWA_URL
 ].filter(Boolean);
 
 app.use(

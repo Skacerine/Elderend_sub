@@ -33,7 +33,8 @@ app.use(express.json());
 app.get("/health", (_req, res) => {
   res.json({
     ok: true,
-    service: "drop-detection-backend"
+    service: "drop-detection-backend",
+    allowedOrigins
   });
 });
 

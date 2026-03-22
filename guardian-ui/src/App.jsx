@@ -52,10 +52,57 @@ export default function App() {
   }
 
   function playAlarm() {
+  console.log("playAlarm called", {
+    audioEnabled,
+    hasAudioRef: !!audioRef.current,
+    visibilityState: document.visibilityState
+  });
+
   if (!audioEnabled) {
     console.warn("Alarm not played: audio not enabled");
+    alert("Alarm not played: audio not enabled");
     return;
   }
+
+  if (!audioRef.current) {
+    console.warn("Alarm not played: audio element missing");
+    alert("Alarm not played: audio element missing");
+    return;
+  }
+
+  audioRef.current.muted = false;
+  audioRef.current.volume = 1;
+  audioRef.current.currentTime = 0;
+
+  audioRef.current.play()
+    .then(() => {
+      console.log("Alarm started successfully");
+    })
+    .catch((error) => {
+      console.error("Alarm playback blocked:", error);
+      alert(`Alarm playback failed: ${error?.message || error}`);
+    });
+}
+  function testAlarmNow() {
+  if (!audioRef.current) {
+    alert("No audio element found");
+    return;
+  }
+
+  audioRef.current.muted = false;
+  audioRef.current.volume = 1;
+  audioRef.current.currentTime = 0;
+
+  audioRef.current.play()
+    .then(() => {
+      console.log("Manual alarm test succeeded");
+      alert("Manual alarm test succeeded");
+    })
+    .catch((error) => {
+      console.error("Manual alarm test failed:", error);
+      alert(`Manual alarm test failed: ${error?.message || error}`);
+    });
+}
 
   if (!audioRef.current) {
     console.warn("Alarm not played: audio element missing");
@@ -79,25 +126,28 @@ export default function App() {
   }
 
     async function handleEnableAudio() {
-    if (!audioRef.current) return;
-
-    try {
-      audioRef.current.muted = false;
-      audioRef.current.volume = 1;
-      audioRef.current.loop = true;
-      audioRef.current.currentTime = 0;
-
-      await audioRef.current.play();
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-
-      setAudioEnabled(true);
-      console.log("Audio unlocked successfully");
-    } catch (error) {
-      console.error("Audio enable failed:", error);
-      alert("Browser blocked audio. Tap the page again and retry.");
-    }
+  if (!audioRef.current) {
+    alert("No audio element found");
+    return;
   }
+
+  try {
+    audioRef.current.muted = false;
+    audioRef.current.volume = 1;
+    audioRef.current.currentTime = 0;
+
+    await audioRef.current.play();
+    audioRef.current.pause();
+    audioRef.current.currentTime = 0;
+
+    setAudioEnabled(true);
+    alert("Audio enabled successfully");
+    console.log("Audio unlocked successfully");
+  } catch (error) {
+    console.error("Audio enable failed:", error);
+    alert(`Audio enable failed: ${error?.message || error}`);
+  }
+}
 
   function handleStopAlarm() {
     setAlarmActive(false);
@@ -175,11 +225,19 @@ export default function App() {
         >
           {audioEnabled ? "🔊 Sound Enabled" : "🔇 Click to Enable Sound"}
         </button>
+        <button onClick={testAlarmNow}>Test Alarm Sound</button>
         <button onClick={handleStopAlarm}>Stop Alarm</button>
         <button onClick={clearActiveAlert}>Clear Active Alert</button>
       </div>
 
-      <audio ref={audioRef} preload="auto" loop playsInline>
+      <audio
+        ref={audioRef}
+        preload="auto"
+        loop
+        playsInline
+        onCanPlay={() => console.log("alarm.mp3 can play")}
+        onError={(e) => console.error("audio element error", e)}
+      >
         <source src="/alarm.mp3" type="audio/mpeg" />
       </audio>
 
@@ -260,7 +318,6 @@ export default function App() {
       </div>
     </div>
   );
-}
 
 const cardStyle = {
   border: "1px solid #e5e7eb",

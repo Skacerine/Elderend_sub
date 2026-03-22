@@ -1,6 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { connectToAlerts } from "./socket";
 
+const cardStyle = {
+  border: "1px solid #e5e7eb",
+  borderRadius: 12,
+  padding: 16,
+  background: "#f9fafb"
+};
+
+const metricStyle = {
+  fontSize: 18,
+  fontWeight: 700,
+  margin: "8px 0 0 0"
+};
+
 export default function App() {
   const [messages, setMessages] = useState([]);
   const [audioEnabled, setAudioEnabled] = useState(false);
@@ -26,13 +39,15 @@ export default function App() {
         }
 
         if (message.type === "system_error" || message.type === "warning") {
-          setMessages((prev) => [
-            {
-              ...message,
-              receivedAt: new Date().toLocaleString()
-            },
-            ...prev
-          ].slice(0, 20));
+          setMessages((prev) =>
+            [
+              {
+                ...message,
+                receivedAt: new Date().toLocaleString()
+              },
+              ...prev
+            ].slice(0, 20)
+          );
         }
       },
       onOpen: () => setConnectionState("connected"),
@@ -52,71 +67,59 @@ export default function App() {
   }
 
   function playAlarm() {
-  console.log("playAlarm called", {
-    audioEnabled,
-    hasAudioRef: !!audioRef.current,
-    visibilityState: document.visibilityState
-  });
-
-  if (!audioEnabled) {
-    console.warn("Alarm not played: audio not enabled");
-    alert("Alarm not played: audio not enabled");
-    return;
-  }
-
-  if (!audioRef.current) {
-    console.warn("Alarm not played: audio element missing");
-    alert("Alarm not played: audio element missing");
-    return;
-  }
-
-  audioRef.current.muted = false;
-  audioRef.current.volume = 1;
-  audioRef.current.currentTime = 0;
-
-  audioRef.current.play()
-    .then(() => {
-      console.log("Alarm started successfully");
-    })
-    .catch((error) => {
-      console.error("Alarm playback blocked:", error);
-      alert(`Alarm playback failed: ${error?.message || error}`);
+    console.log("playAlarm called", {
+      audioEnabled,
+      hasAudioRef: !!audioRef.current,
+      visibilityState: document.visibilityState
     });
-}
-  function testAlarmNow() {
-  if (!audioRef.current) {
-    alert("No audio element found");
-    return;
-  }
 
-  audioRef.current.muted = false;
-  audioRef.current.volume = 1;
-  audioRef.current.currentTime = 0;
+    if (!audioEnabled) {
+      console.warn("Alarm not played: audio not enabled");
+      alert("Alarm not played: audio not enabled");
+      return;
+    }
 
-  audioRef.current.play()
-    .then(() => {
-      console.log("Manual alarm test succeeded");
-      alert("Manual alarm test succeeded");
-    })
-    .catch((error) => {
-      console.error("Manual alarm test failed:", error);
-      alert(`Manual alarm test failed: ${error?.message || error}`);
-    });
-}
-
-  if (!audioRef.current) {
-    console.warn("Alarm not played: audio element missing");
-    return;
+    if (!audioRef.current) {
+      console.warn("Alarm not played: audio element missing");
+      alert("Alarm not played: audio element missing");
+      return;
     }
 
     audioRef.current.muted = false;
     audioRef.current.volume = 1;
     audioRef.current.currentTime = 0;
 
-    audioRef.current.play().catch((error) => {
-      console.error("Alarm playback blocked:", error);
-      alert("Alarm sound was blocked by the browser. Tap 'Click to Enable Sound' again.");
-    });
+    audioRef.current
+      .play()
+      .then(() => {
+        console.log("Alarm started successfully");
+      })
+      .catch((error) => {
+        console.error("Alarm playback blocked:", error);
+        alert(`Alarm playback failed: ${error?.message || error}`);
+      });
+  }
+
+  function testAlarmNow() {
+    if (!audioRef.current) {
+      alert("No audio element found");
+      return;
+    }
+
+    audioRef.current.muted = false;
+    audioRef.current.volume = 1;
+    audioRef.current.currentTime = 0;
+
+    audioRef.current
+      .play()
+      .then(() => {
+        console.log("Manual alarm test succeeded");
+        alert("Manual alarm test succeeded");
+      })
+      .catch((error) => {
+        console.error("Manual alarm test failed:", error);
+        alert(`Manual alarm test failed: ${error?.message || error}`);
+      });
   }
 
   function vibrateDevice() {
@@ -125,29 +128,29 @@ export default function App() {
     }
   }
 
-    async function handleEnableAudio() {
-  if (!audioRef.current) {
-    alert("No audio element found");
-    return;
+  async function handleEnableAudio() {
+    if (!audioRef.current) {
+      alert("No audio element found");
+      return;
+    }
+
+    try {
+      audioRef.current.muted = false;
+      audioRef.current.volume = 1;
+      audioRef.current.currentTime = 0;
+
+      await audioRef.current.play();
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+
+      setAudioEnabled(true);
+      alert("Audio enabled successfully");
+      console.log("Audio unlocked successfully");
+    } catch (error) {
+      console.error("Audio enable failed:", error);
+      alert(`Audio enable failed: ${error?.message || error}`);
+    }
   }
-
-  try {
-    audioRef.current.muted = false;
-    audioRef.current.volume = 1;
-    audioRef.current.currentTime = 0;
-
-    await audioRef.current.play();
-    audioRef.current.pause();
-    audioRef.current.currentTime = 0;
-
-    setAudioEnabled(true);
-    alert("Audio enabled successfully");
-    console.log("Audio unlocked successfully");
-  } catch (error) {
-    console.error("Audio enable failed:", error);
-    alert(`Audio enable failed: ${error?.message || error}`);
-  }
-}
 
   function handleStopAlarm() {
     setAlarmActive(false);
@@ -297,10 +300,7 @@ export default function App() {
                 border: "1px solid #e5e7eb",
                 borderRadius: 12,
                 padding: 16,
-                background:
-                  msg.type === "drop_alert"
-                    ? "#fee2e2"
-                    : "#f9fafb"
+                background: msg.type === "drop_alert" ? "#fee2e2" : "#f9fafb"
               }}
             >
               <strong>{msg.type}</strong>
@@ -318,16 +318,4 @@ export default function App() {
       </div>
     </div>
   );
-
-const cardStyle = {
-  border: "1px solid #e5e7eb",
-  borderRadius: 12,
-  padding: 16,
-  background: "#f9fafb"
-};
-
-const metricStyle = {
-  fontSize: 18,
-  fontWeight: 700,
-  margin: "8px 0 0 0"
-};
+}

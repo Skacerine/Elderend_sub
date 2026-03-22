@@ -17,16 +17,21 @@
   if (peakAcceleration > 12) score += 25;
   if (peakAcceleration > 18) score += 15;
 
-  if (postImpactStillnessMs > 1000) score += 10;
-  if (postImpactStillnessMs > 2000) score += 10;
+  const hadImpactLikeMotion =
+    minAcceleration < 6 ||
+    peakAcceleration > 12 ||
+    peakRotationRate > 100;
+
+  if (hadImpactLikeMotion && postImpactStillnessMs > 1000) score += 10;
+  if (hadImpactLikeMotion && postImpactStillnessMs > 2000) score += 10;
 
   let severity = "LOW";
-  if (score >= 70) severity = "HIGH";
-  else if (score >= 40) severity = "MEDIUM";
+  if (score >= 100) severity = "HIGH";
+  else if (score >= 65) severity = "MEDIUM";
   else severity = "LOW";
 
   return {
-    detected: score >= 20,
+    detected: score >= 65,
     score,
     severity
   };

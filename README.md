@@ -19,7 +19,8 @@ docker compose up --build
 Then:
 
 Guardian UI on laptop: http://localhost:5173
-Phone PWA on phone: http://YOUR_LAPTOP_IP:5174
+Phone PWA on phone: Your_Laptop_ipv4:5174 [Alec's 10.117.227.34]
+To get the IPV4, go terminal > cmd >ipconfi > look for IPv4Address
 
 Example:
 

@@ -16,7 +16,12 @@ function estimateStillness(windowSamples) {
   return variance < 1.5 ? 3000 : 0;
 }
 
-export function createMotionMonitor({ onFeatureReady }) {
+export function createMotionMonitor({
+  onFeatureReady,
+  onStart,
+  onStop,
+  onError
+}) {
   let active = false;
   let samples = [];
   let cooldownUntil = 0;
@@ -56,7 +61,9 @@ export function createMotionMonitor({ onFeatureReady }) {
 
     if (suspicious) {
       cooldownUntil = now + 5000;
-      onFeatureReady(features);
+      Promise.resolve(onFeatureReady?.(features)).catch((error) => {
+        onError?.(error.message || "Failed to process motion event.");
+      });
       samples = [];
     }
   }
@@ -64,28 +71,42 @@ export function createMotionMonitor({ onFeatureReady }) {
   async function start() {
     if (active) return;
 
-    if (
-      typeof DeviceMotionEvent !== "undefined" &&
-      typeof DeviceMotionEvent.requestPermission === "function"
-    ) {
+    if (typeof window === "undefined" || typeof window.addEventListener !== "function") {
+      throw new Error("Motion monitoring is not available in this environment.");
+    }
+
+    if (typeof DeviceMotionEvent === "undefined") {
+      throw new Error("This device or browser does not support motion detection.");
+    }
+
+    if (typeof DeviceMotionEvent.requestPermission === "function") {
       const permission = await DeviceMotionEvent.requestPermission();
       if (permission !== "granted") {
-        throw new Error("Motion permission denied");
+        throw new Error("Motion permission denied.");
       }
     }
 
     window.addEventListener("devicemotion", handleMotion);
     active = true;
+    onStart?.();
   }
 
   function stop() {
+    if (!active) return;
+
     window.removeEventListener("devicemotion", handleMotion);
     active = false;
     samples = [];
+    onStop?.();
+  }
+
+  function isActive() {
+    return active;
   }
 
   return {
     start,
-    stop
+    stop,
+    isActive
   };
 }

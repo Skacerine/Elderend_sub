@@ -1,5 +1,6 @@
 export function connectToAlerts(onMessage) {
-  const ws = new WebSocket("ws://localhost:4000");
+  const host = window.location.hostname;
+  const ws = new WebSocket(`ws://${host}:4000`);
 
   ws.onmessage = (event) => {
     const parsed = JSON.parse(event.data);

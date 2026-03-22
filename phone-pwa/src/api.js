@@ -1,4 +1,5 @@
-const BASE_URL = "http://localhost:4000";
+const API_HOST = window.location.hostname;
+const BASE_URL = `http://${API_HOST}:4000`;
 
 export async function sendMotionSample(payload) {
   const response = await fetch(`${BASE_URL}/motion/sample`, {

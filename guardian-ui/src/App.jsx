@@ -34,7 +34,6 @@ export default function App() {
 
   function vibrateDevice() {
     if ("vibrate" in navigator) {
-      // vibration pattern: vibrate, pause, vibrate, pause, vibrate
       navigator.vibrate([400, 200, 400, 200, 800]);
     }
   }
@@ -55,6 +54,16 @@ export default function App() {
     }
   }
 
+  function handleStopAlarm() {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    if ("vibrate" in navigator) {
+      navigator.vibrate(0);
+    }
+  }
+
   return (
     <div style={{ fontFamily: "sans-serif", padding: 24 }}>
       <h1>Guardian UI</h1>
@@ -64,20 +73,7 @@ export default function App() {
         <button onClick={handleEnableAudio}>
           {audioEnabled ? "Alert Sound Enabled" : "Enable Alert Sound"}
         </button>
-        
-        <button
-            onClick={() => {
-                if (audioRef.current) {
-                audioRef.current.pause();
-                audioRef.current.currentTime = 0;
-                }
-                if ("vibrate" in navigator) {
-                navigator.vibrate(0);
-                }
-            }}
-            >
-            Stop Alarm
-        </button>   
+        <button onClick={handleStopAlarm}>Stop Alarm</button>
       </div>
 
       <audio ref={audioRef} preload="auto" loop>
@@ -96,7 +92,7 @@ export default function App() {
             }}
           >
             <strong>{msg.type}</strong>
-            <pre style={{ marginTop: 8 }}>
+            <pre style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>
               {JSON.stringify(msg.data, null, 2)}
             </pre>
           </div>

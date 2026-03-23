@@ -26,12 +26,12 @@
   if (hadImpactLikeMotion && postImpactStillnessMs > 2000) score += 10;
 
   let severity = "LOW";
-  if (score >= 100) severity = "HIGH";
-  else if (score >= 65) severity = "MEDIUM";
-  else severity = "LOW";
+  if (score >= 100) severity = "FALLEN";
+  else if (score >= 65) severity = "NORMAL";
+  else severity = "ATREST";
 
   return {
-    detected: score >= 65,
+    detected: score >= 100,
     score,
     severity
   };

@@ -8,7 +8,8 @@ export async function postElderlyLogToOutSystems({
   timestamp
 }) {
   const baseUrl = process.env.OUTSYSTEMS_BASE_URL;
-  const path = process.env.OUTSYSTEMS_ELDERLYLOG_PATH || "/ElderlyLog/elderlylog/";
+  const path =
+    process.env.OUTSYSTEMS_ELDERLYLOG_PATH || "/ElderlyLog/CreateElderlyLog";
 
   if (!baseUrl) {
     console.warn("OUTSYSTEMS_BASE_URL is not set. Skipping OutSystems sync.");

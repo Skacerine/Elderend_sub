@@ -202,7 +202,7 @@ export default function App() {
               </div>
               <div className="status-pill">
                 <span className="status-dot status-dot--cyan" />
-                Score threshold: 65
+                Score threshold: 100
               </div>
             </div>
 
@@ -276,14 +276,14 @@ export default function App() {
                     <div className="info-title">When to act</div>
                     <div className="footer-note">
                       A rising score usually reflects a suspicious sequence such as drop, impact,
-                      rotation, and stillness. Alerts should be reviewed immediately.
+                      rotation, and stillness. Alerts should be reviewed immediately, call your elderly!
                     </div>
                   </div>
                   <div className="info-card">
                     <div className="info-title">Threshold tuning</div>
                     <div className="footer-note">
-                      The backend currently rings only at score 65 and above to reduce false alarms
-                      from normal handling or light movement.
+                      The backend currently rings only at score 100 and above to reduce false alarms
+                      from normal handling of phones.
                     </div>
                   </div>
                 </div>

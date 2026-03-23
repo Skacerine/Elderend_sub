@@ -16,10 +16,10 @@ function prettyTime(value) {
 function getStateTone({ isMonitoring, isSending, lastResponse, errorMessage }) {
   if (errorMessage) {
     return {
-      chip: "Issue detected",
+      chip: "Issue",
       dot: "state-dot--red",
       title: "Monitoring unavailable",
-      copy: "The phone could not continue safe monitoring. Check motion permissions, browser support, or backend connectivity."
+      copy: "Check permissions or connection."
     };
   }
 
@@ -27,8 +27,8 @@ function getStateTone({ isMonitoring, isSending, lastResponse, errorMessage }) {
     return {
       chip: "Alert sent",
       dot: "state-dot--red",
-      title: "Possible fall reported",
-      copy: "A high-risk motion event crossed the configured safety threshold and was sent to the guardian dashboard."
+      title: "Help alert sent",
+      copy: "Your guardian has been notified."
     };
   }
 
@@ -36,8 +36,8 @@ function getStateTone({ isMonitoring, isSending, lastResponse, errorMessage }) {
     return {
       chip: "Sending",
       dot: "state-dot--yellow",
-      title: "Analyzing suspicious motion",
-      copy: "The phone captured a suspicious movement pattern and is sending it to the backend for scoring."
+      title: "Checking movement",
+      copy: "Please wait."
     };
   }
 
@@ -45,16 +45,16 @@ function getStateTone({ isMonitoring, isSending, lastResponse, errorMessage }) {
     return {
       chip: "Protected",
       dot: "state-dot--green",
-      title: "Monitoring is active",
-      copy: "The phone is continuously watching for dangerous motion patterns such as drop, impact, spin, and stillness."
+      title: "Monitoring active",
+      copy: "Fall protection is on."
     };
   }
 
   return {
     chip: "Paused",
     dot: "state-dot--yellow",
-    title: "Monitoring is paused",
-    copy: "The system is currently idle. Enable monitoring to start watching for suspicious motion."
+    title: "Monitoring paused",
+    copy: "Press enable to start."
   };
 }
 
@@ -97,7 +97,8 @@ export default function App() {
           });
 
           console.log("Motion sample result:", {
-            apiBaseUrl: import.meta.env.VITE_API_BASE_URL || "https://elderallbackend.onrender.com",
+            apiBaseUrl:
+              import.meta.env.VITE_API_BASE_URL || "https://elderallbackend.onrender.com",
             features,
             result
           });
@@ -174,9 +175,7 @@ export default function App() {
             <div className="phone-mark">📱</div>
             <div>
               <div className="phone-title">Elderall Safety Phone</div>
-              <div className="phone-subtitle">
-                A calm companion app that monitors motion and quietly watches for dangerous falls.
-              </div>
+              <div className="phone-subtitle">Fall monitoring</div>
             </div>
           </div>
 
@@ -187,7 +186,7 @@ export default function App() {
         </div>
 
         <div className="phone-state">
-          <div className="phone-kicker">Live protection state</div>
+          <div className="phone-kicker">Status</div>
           <div className="phone-main-state">{tone.title}</div>
           <div className="phone-copy">{tone.copy}</div>
 
@@ -197,7 +196,7 @@ export default function App() {
               <div className="phone-stat-value">{isMonitoring ? "On" : "Off"}</div>
             </div>
             <div className="phone-stat">
-              <div className="phone-stat-label">Backend activity</div>
+              <div className="phone-stat-label">Backend</div>
               <div className="phone-stat-value">{isSending ? "Sending..." : "Ready"}</div>
             </div>
             <div className="phone-stat">
@@ -205,7 +204,7 @@ export default function App() {
               <div className="phone-stat-value">{prettyTime(lastAlertTime)}</div>
             </div>
             <div className="phone-stat">
-              <div className="phone-stat-label">Current status</div>
+              <div className="phone-stat-label">State</div>
               <div className="phone-stat-value">{status}</div>
             </div>
           </div>
@@ -217,63 +216,30 @@ export default function App() {
           {!isMonitoring ? (
             <button className="phone-button phone-button--primary" onClick={handleEnableMonitoring}>
               <span className="phone-button-title">Enable Monitoring</span>
-              <span className="phone-button-caption">
-                Start watching for suspicious movement using the phone’s motion sensors
-              </span>
+              <span className="phone-button-caption">Start protection</span>
             </button>
           ) : (
             <button className="phone-button phone-button--danger" onClick={handlePauseMonitoring}>
               <span className="phone-button-title">Pause Monitoring</span>
-              <span className="phone-button-caption">
-                Stop motion tracking and prevent new alerts from being sent
-              </span>
+              <span className="phone-button-caption">Stop protection</span>
             </button>
           )}
 
           <button className="phone-button phone-button--ghost" onClick={handleSimulateDrop}>
             <span className="phone-button-title">Simulate Drop</span>
-            <span className="phone-button-caption">
-              Send a test incident to the guardian dashboard without needing a physical fall
-            </span>
+            <span className="phone-button-caption">Send test alert</span>
           </button>
         </div>
 
-        <div className="phone-panel">
-          <div className="phone-section-title">Designed for clarity</div>
-          <div className="phone-panel-title">A simpler interface for the elderly user</div>
-          <div className="phone-panel-copy">
-            The elderly-facing app is intentionally calm and minimal. It focuses on one core promise:
-            keep monitoring active, avoid clutter, and make the current safety state easy to understand
-            at a glance.
-          </div>
-        </div>
-
-        <div className="phone-explainer">
-          <div className="explainer-item">
-            <div className="explainer-title">Enable Monitoring</div>
-            <div className="explainer-copy">
-              Starts the phone’s motion monitoring so the system can watch for dangerous movement patterns.
-            </div>
-          </div>
-
-          <div className="explainer-item">
-            <div className="explainer-title">Pause Monitoring</div>
-            <div className="explainer-copy">
-              Stops motion tracking completely. This is useful for testing, charging, or temporary inactivity.
-            </div>
-          </div>
-
-          <div className="explainer-item">
-            <div className="explainer-title">Simulate Drop</div>
-            <div className="explainer-copy">
-              Sends a guaranteed test alert to the guardian dashboard so the full end-to-end flow can be checked quickly.
-            </div>
+        <div className="phone-reminder">
+          <div className="phone-reminder-title">Keep this app open</div>
+          <div className="phone-reminder-copy">
+            Do not swipe it away. For best protection, keep this screen open when possible.
           </div>
         </div>
 
         <div className="phone-debug">
-          <div className="phone-section-title">Latest backend response</div>
-          <div className="phone-panel-title">For testing and grading visibility</div>
+          <div className="phone-section-title">Latest response</div>
           <pre className="debug-block">{JSON.stringify(lastResponse, null, 2)}</pre>
         </div>
       </div>

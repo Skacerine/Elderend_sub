@@ -66,9 +66,9 @@ export default function App() {
   const [isSending, setIsSending] = useState(false);
   const [lastAlertTime, setLastAlertTime] = useState(null);
 
-  const elderlyId = "13";
+  const elderlyId = 13;
+  const guardianId = 1;
   const deviceId = "PHONE_01";
-
   const monitor = useMemo(() => {
     return createMotionMonitor({
       onStart: () => {
@@ -91,8 +91,12 @@ export default function App() {
 
           const result = await sendMotionSample({
             elderlyId,
+            guardianId,
             deviceId,
             timestamp: new Date().toISOString(),
+            latitude: 1.2966,
+            longitude: 103.8502,
+            address: "Tanjong Pagar, Singapore",
             features
           });
 
@@ -155,7 +159,16 @@ export default function App() {
     try {
       setErrorMessage("");
       setStatus("Sending simulated drop...");
-      const result = await simulateDrop({ elderlyId, deviceId });
+
+      const result = await simulateDrop({
+        elderlyId,
+        guardianId,
+        deviceId,
+        latitude: 1.2966,
+        longitude: 103.8502,
+        address: "Tanjong Pagar, Singapore"
+      });
+
       setLastResponse(result);
       setLastAlertTime(new Date().toISOString());
       setStatus("Simulated drop sent");

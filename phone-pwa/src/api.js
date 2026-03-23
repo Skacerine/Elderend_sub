@@ -1,5 +1,5 @@
 const RAW_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://elderallbackend.onrender.com";
+  import.meta.env.VITE_API_BASE_URL || "https://elderend-backend.onrender.com";
 
 const BASE_URL = RAW_BASE_URL.replace(/\/$/, "");
 

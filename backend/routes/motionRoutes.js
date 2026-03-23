@@ -2,11 +2,21 @@
 import { scoreDropRisk } from "../services/dropDetectionService.js";
 import { createIncident } from "../services/incidentService.js";
 import { getIncidents, getLatestIncidentByElderlyId } from "../store/incidentStore.js";
+import { postElderlyLogToOutSystems } from "../services/outsystemsService.js";
 
 const router = express.Router();
 
-router.post("/sample", (req, res) => {
-  const { elderlyId, deviceId, timestamp, features } = req.body || {};
+router.post("/sample", async (req, res) => {
+  const {
+    elderlyId,
+    deviceId,
+    timestamp,
+    features,
+    latitude,
+    longitude,
+    address,
+    guardianId
+  } = req.body || {};
 
   if (!elderlyId || !deviceId || !features) {
     return res.status(400).json({
@@ -25,6 +35,20 @@ router.post("/sample", (req, res) => {
       score: result.score
     });
 
+    try {
+      await postElderlyLogToOutSystems({
+        elderlyId,
+        guardianId,
+        latitude,
+        longitude,
+        address,
+        status: "FALL_DETECTED",
+        timestamp: timestamp || new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Failed to sync incident to OutSystems:", error.message);
+    }
+
     return res.json({
       detected: true,
       incident,
@@ -40,8 +64,15 @@ router.post("/sample", (req, res) => {
   });
 });
 
-router.post("/simulate-drop", (req, res) => {
-  const { elderlyId = "E001", deviceId = "PHONE_01" } = req.body || {};
+router.post("/simulate-drop", async (req, res) => {
+  const {
+    elderlyId = 1234567891234567,
+    guardianId = 1234567891234567,
+    deviceId = "PHONE_01",
+    latitude = 1.2966,
+    longitude = 103.8502,
+    address = "Tanjong Pagar, Singapore"
+  } = req.body || {};
 
   const features = {
     minAcceleration: 1.1,
@@ -58,7 +89,31 @@ router.post("/simulate-drop", (req, res) => {
     score: 100
   });
 
-  res.json({ detected: true, incident });
+  try {
+    const outsystemsResponse = await postElderlyLogToOutSystems({
+      elderlyId,
+      guardianId,
+      latitude,
+      longitude,
+      address,
+      status: "FALL_DETECTED",
+      timestamp: new Date().toISOString()
+    });
+
+    return res.json({
+      detected: true,
+      incident,
+      outsystemsResponse
+    });
+  } catch (error) {
+    console.error("Failed to sync simulated incident to OutSystems:", error.message);
+
+    return res.status(500).json({
+      detected: true,
+      incident,
+      outsystemsError: error.message
+    });
+  }
 });
 
 router.get("/incidents", (_req, res) => {

@@ -1,85 +1,56 @@
 # Elderall Phone Drop Detection System
 
-A simple system that helps protect elderly people by detecting when they might have fallen using their smartphone.
+Elderall is a lightweight elderly safety prototype that uses a smartphone to detect possible falls and send a live alert to a guardian dashboard.
 
-## What It Does
+In simple terms, the phone acts like a motion-sensitive watcher. If it detects a movement pattern that looks dangerous, such as a sudden drop, impact, spin, and then stillness, it sends that information to a backend service. The backend then decides whether the event is serious enough to trigger an alert. If it is, the guardian dashboard immediately shows an emergency alert and plays an alarm sound.
 
-- **Phone App**: Runs on the elderly person's phone and watches for sudden movements
-- **Guardian Dashboard**: Shows alerts on a computer or tablet when a fall is detected
-- **Backend Service**: Processes the motion data and sends alerts instantly
+This project was built as a practical proof-of-concept to show how web technologies, motion sensors, and real-time communication can be used to support elderly care in a simple and accessible way.
 
-## How to Run It
+---
 
-From project root:
+## What Problem This Project Solves
 
-```
-docker compose up --build
-```
+Older adults who live alone may be vulnerable if they fall and are unable to call for help. Traditional monitoring systems can be expensive, intrusive, or require dedicated hardware. This project explores a more accessible alternative by using something many people already have: a smartphone.
 
-Then:
+The idea is not to replace professional medical devices, but to demonstrate how a phone-based monitoring system can help detect suspicious movement and notify a guardian quickly.
 
-Guardian UI on laptop: http://localhost:5173
-Phone PWA on phone: Your_Laptop_ipv4:5174 [Alec's 10.117.227.34]
-To get the IPV4, go terminal > cmd >ipconfig > look for IPv4Address
+---
 
-Example:
+## What the System Does
 
-http://192.168.1.10:5174
+The system has three main parts:
 
-Use ipconfig on Windows to find your laptop IPv4 address.
+### 1. Phone App (https://phonedropper9000-xi.vercel.app)
+The phone app runs as a Progressive Web App (PWA) on the elderly person’s phone. It reads the phone’s motion sensors and watches for suspicious movement patterns.
 
-## How to Test It
+### 2. Backend Service - no UI for this but it is hosted on render (wss://elderend-backend.onrender.com)
+The backend receives motion data from the phone, calculates a risk score, and decides whether the movement is serious enough to count as a possible fall.
 
-On laptop:
+### 3. Guardian Dashboard (https://guardianphonedropper.vercel.app)
+The guardian dashboard receives live alerts from the backend. When a serious event is detected, it displays the alert details, plays an alarm sound, and attempts to vibrate the device if supported.
 
-- open Guardian UI
-- click Enable Alert Sound
+---
 
-On phone:
+## How motion is calibrated
 
-- open Phone PWA using laptop IP
-- tap Start Monitoring
-- or tap Simulate Drop
+When the phone is being monitored, it keeps watching motion changes in the background. The app looks for signs such as:
 
-Expected result:
+- a sudden drop in acceleration
+- a strong impact
+- a rapid spin or rotation
+- stillness immediately after the suspicious movement
 
-- backend receives motion event
-- backend detects drop
-- Guardian UI gets live alert
-- alarm plays
-- vibration attempts if supported
+These motion signals are grouped into a small set of features and sent to the backend. The backend then assigns a score based on how dangerous the movement looks.
 
-## How It Works
+If the score is high enough, the system treats it as a possible fall and sends a live alert to the guardian dashboard.
 
-The phone app uses the phone's built-in motion sensors to detect:
-- Sudden drops or falls
-- Strong impacts
-- Quick spinning movements
-- Being still after a possible fall
+This means the phone is not simply reacting to any movement. It is trying to identify a pattern that resembles a fall, rather than ordinary handling.
 
-When something suspicious is detected, it sends an alert to the guardian dashboard immediately.
+---
 
-## Requirements
+## Current Alert Sensitivity
 
-- Docker and Docker Compose
-- Modern web browser
-- Phone with motion sensors (most smartphones)
+The system currently only triggers a real alert when the motion score is:
 
-## Project Structure
-
-```
-├── backend/          # Server that processes alerts
-├── phone-pwa/        # App for elderly person's phone
-└── guardian-ui/      # Dashboard for caregivers
-```
-
-- [ ] Database integration for persistent incident storage
-- [ ] User authentication & role-based access
-- [ ] Mobile app native integration (React Native)
-- [ ] Machine learning-based drop scoring refinement
-- [ ] SMS/email notifications for guardians
-- [ ] Incident timeline visualization
-- [ ] Multi-elderly user support
-- [ ] Admin dashboard for system monitoring
-- [ ] Geolocation tracking integration
-- [ ] Two-way communication (elderly → guardian alert confirmation)
+```js
+score >= 100

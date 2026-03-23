@@ -186,7 +186,7 @@ export default function App() {
       <div className="phone-shell">
         <div className="phone-topbar">
           <div className="phone-brand">
-            <div className="phone-mark">📱</div>
+            <div className="phone-mark">🛡️</div>
             <div>
               <div className="phone-title">Elderall Safety Phone</div>
               <div className="phone-subtitle">Fall monitoring</div>
@@ -207,11 +207,11 @@ export default function App() {
           <div className="phone-grid">
             <div className="phone-stat">
               <div className="phone-stat-label">Monitoring</div>
-              <div className="phone-stat-value">{isMonitoring ? "On" : "Off"}</div>
+              <div className={`phone-stat-value ${isMonitoring ? "phone-stat-value--on" : "phone-stat-value--off"}`}>{isMonitoring ? "On" : "Off"}</div>
             </div>
             <div className="phone-stat">
               <div className="phone-stat-label">Backend</div>
-              <div className="phone-stat-value">{isSending ? "Sending..." : "Ready"}</div>
+              <div className={`phone-stat-value ${isSending ? "phone-stat-value--busy" : "phone-stat-value--on"}`}>{isSending ? "Sending..." : "Ready"}</div>
             </div>
             <div className="phone-stat">
               <div className="phone-stat-label">Last alert</div>

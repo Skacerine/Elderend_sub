@@ -34,15 +34,12 @@ export async function postElderlyLogToOutSystems({
 
   const payload = {
     elderly_id: elderlyIdNum,
-    elderly_log: {
-      elderly_id: elderlyIdNum,
-      guardian_id: guardianIdNum,
-      latitude: latitudeNum,
-      longitude: longitudeNum,
-      address: String(address ?? ""),
-      status: finalStatus,
-      timestamp: timestamp ?? new Date().toISOString()
-    }
+    guardian_id: guardianIdNum,
+    latitude: latitudeNum,
+    longitude: longitudeNum,
+    address: String(address ?? ""),
+    status: finalStatus,
+    timestamp: timestamp ?? new Date().toISOString()
   };
 
   console.log("Posting ElderlyLog to OutSystems:", JSON.stringify(payload, null, 2));

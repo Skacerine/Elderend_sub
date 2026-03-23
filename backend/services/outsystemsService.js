@@ -16,20 +16,36 @@ export async function postElderlyLogToOutSystems({
     return { skipped: true };
   }
 
+  const elderlyIdNum = Number(elderlyId);
+  const guardianIdNum = Number(guardianId);
+  const latitudeNum = Number(latitude ?? 0);
+  const longitudeNum = Number(longitude ?? 0);
+  const finalStatus = String(status ?? "FALLEN").trim().toUpperCase();
+
+  if (!Number.isFinite(elderlyIdNum) || elderlyIdNum <= 0) {
+    throw new Error(`Invalid elderlyId for OutSystems: ${elderlyId}`);
+  }
+
+  if (!Number.isFinite(guardianIdNum) || guardianIdNum <= 0) {
+    throw new Error(`Invalid guardianId for OutSystems: ${guardianId}`);
+  }
+
   const url = `${baseUrl}${path}`;
 
   const payload = {
-    elderly_id: Number(elderlyId),
+    elderly_id: elderlyIdNum,
     elderly_log: {
-      elderly_id: Number(elderlyId),
-      guardian_id: Number(guardianId),
-      latitude: Number(latitude ?? 0),
-      longitude: Number(longitude ?? 0),
+      elderly_id: elderlyIdNum,
+      guardian_id: guardianIdNum,
+      latitude: latitudeNum,
+      longitude: longitudeNum,
       address: String(address ?? ""),
-      status: String(status ?? "FALL_DETECTED"),
+      status: finalStatus,
       timestamp: timestamp ?? new Date().toISOString()
     }
   };
+
+  console.log("Posting ElderlyLog to OutSystems:", JSON.stringify(payload, null, 2));
 
   const response = await fetch(url, {
     method: "POST",

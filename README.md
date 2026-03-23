@@ -20,13 +20,13 @@ The idea is not to replace professional medical devices, but to demonstrate how 
 
 The system has three main parts:
 
-### 1. Phone App (https://phonedropper9000-xi.vercel.app)
+### 1. Phone App (https://phonedropper9000-xi.vercel.app) - try this on phone
 The phone app runs as a Progressive Web App (PWA) on the elderly person’s phone. It reads the phone’s motion sensors and watches for suspicious movement patterns.
 
 ### 2. Backend Service - no UI for this but it is hosted on render (wss://elderend-backend.onrender.com)
 The backend receives motion data from the phone, calculates a risk score, and decides whether the movement is serious enough to count as a possible fall.
 
-### 3. Guardian Dashboard (https://guardianphonedropper.vercel.app)
+### 3. Guardian Dashboard (https://guardianphonedropper.vercel.app) - try this on laptop/phone
 The guardian dashboard receives live alerts from the backend. When a serious event is detected, it displays the alert details, plays an alarm sound, and attempts to vibrate the device if supported.
 
 ---

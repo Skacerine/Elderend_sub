@@ -66,7 +66,7 @@ export default function App() {
   const [isSending, setIsSending] = useState(false);
   const [lastAlertTime, setLastAlertTime] = useState(null);
 
-  const elderlyId = "E001";
+  const elderlyId = "13";
   const deviceId = "PHONE_01";
 
   const monitor = useMemo(() => {

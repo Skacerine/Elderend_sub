@@ -69,6 +69,7 @@ export default function App() {
   const elderlyId = 1;
   const guardianId = 1;
   const deviceId = "PHONE_01";
+
   const monitor = useMemo(() => {
     return createMotionMonitor({
       onStart: () => {
@@ -102,7 +103,7 @@ export default function App() {
 
           console.log("Motion sample result:", {
             apiBaseUrl:
-              import.meta.env.VITE_API_BASE_URL || "https://elderallbackend.onrender.com",
+              import.meta.env.VITE_API_BASE_URL || "https://elderend-backend.onrender.com",
             features,
             result
           });

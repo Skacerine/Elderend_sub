@@ -42,7 +42,7 @@ router.post("/sample", async (req, res) => {
         latitude,
         longitude,
         address,
-        status: "FALL_DETECTED",
+        status: result.severity,
         timestamp: timestamp || new Date().toISOString()
       });
     } catch (error) {
@@ -85,7 +85,7 @@ router.post("/simulate-drop", async (req, res) => {
     elderlyId,
     deviceId,
     features,
-    severity: "HIGH",
+    severity: "FALLEN",
     score: 100
   });
 
@@ -96,7 +96,7 @@ router.post("/simulate-drop", async (req, res) => {
       latitude,
       longitude,
       address,
-      status: "FALL_DETECTED",
+      status: "FALLEN",
       timestamp: new Date().toISOString()
     });
 

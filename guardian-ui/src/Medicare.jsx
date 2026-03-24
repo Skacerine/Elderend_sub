@@ -198,6 +198,31 @@ export default function Medicare() {
             );
           })}
 
+          {/* All medicines */}
+          <div className="mc-section-label">All medicines</div>
+          <div className="mc-all-meds-table">
+            <table>
+              <thead>
+                <tr><th>Medicine</th><th>Time</th><th>Dose</th><th>Stock</th></tr>
+              </thead>
+              <tbody>
+                {sorted.map((med) => {
+                  const stock = med.Stock == null ? 0 : Number(med.Stock);
+                  return (
+                    <tr key={`all-${med.Name}-${med.ReminderTime}`}>
+                      <td className="mc-table-name">{med.Name}</td>
+                      <td>{formatTime(med.ReminderTime)}</td>
+                      <td>{Number(med.Dose) || 1}</td>
+                      <td className={stock === 0 ? "mc-table-out" : stock <= 5 ? "mc-table-low" : "mc-table-ok"}>
+                        {stock === 0 ? "Out" : stock}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
           {/* Tomorrow's medicines */}
           <div className="mc-section-label">Tomorrow — {tomorrowStr}</div>
           {sorted.map((med) => {

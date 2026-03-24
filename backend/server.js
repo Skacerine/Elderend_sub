@@ -10,6 +10,7 @@ import statusRoutes from "./routes/statusRoutes.js";
 import alertRoutes from "./routes/alertRoutes.js";
 import notifyRoutes from "./routes/notifyRoutes.js";
 import medicineRoutes from "./routes/medicineRoutes.js";
+import apiDocsRoutes from "./routes/apiDocsRoutes.js";
 import { setWebSocketServer } from "./services/incidentService.js";
 import { initAlertListeners } from "./services/alertListener.js";
 
@@ -57,6 +58,7 @@ app.use("/status", statusRoutes);
 app.use("/alerts", alertRoutes);
 app.use("/notifications", notifyRoutes);
 app.use("/medicine", medicineRoutes);
+app.use("/api-docs", apiDocsRoutes);
 
 // Initialize geofence event listeners (replaces RabbitMQ consumers)
 initAlertListeners();

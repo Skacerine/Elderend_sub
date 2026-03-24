@@ -1581,8 +1581,15 @@ button {
 .mc-week-day--active .mc-week-day-label { color: #fff; }
 .mc-week-day--active .mc-week-day-count { color: rgba(255,255,255,.8); }
 .mc-week-day--today { box-shadow: 0 0 0 2px rgba(34,122,84,.15); }
-.mc-week-day-label { display: block; font-size: 0.7rem; font-weight: 700; color: #3D3D3D; }
-.mc-week-day-count { display: block; font-size: 0.9rem; font-weight: 800; color: #1A5C40; margin-top: 2px; }
+.mc-week-day-label { display: block; font-size: 0.65rem; font-weight: 700; color: #9A9A9A; text-transform: uppercase; }
+.mc-week-day-date { display: block; font-size: 1.05rem; font-weight: 800; color: #1A1A1A; margin-top: 1px; }
+.mc-week-day--active .mc-week-day-label { color: rgba(255,255,255,.7); }
+.mc-week-day--active .mc-week-day-date { color: #fff; }
+.mc-week-day-dot {
+  display: block; width: 5px; height: 5px; border-radius: 50%;
+  background: #227A54; margin: 3px auto 0;
+}
+.mc-week-day--active .mc-week-day-dot { background: rgba(255,255,255,.7); }
 
 .mc-day-title {
   font-size: 1.1rem; font-weight: 800; color: #1A1A1A; margin-bottom: 10px;

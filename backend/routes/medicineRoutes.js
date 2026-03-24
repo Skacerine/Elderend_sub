@@ -45,6 +45,24 @@ router.get("/", async (_req, res) => {
   }
 });
 
+// DELETE /medicine/delete?MedicineId= — delete medicine in OutSystems
+router.delete("/delete", async (req, res) => {
+  const { MedicineId } = req.query;
+  if (!MedicineId) return res.status(400).json({ error: "MedicineId query param required" });
+  try {
+    const response = await fetch(`${MEDICINE_BASE_URL}/medicine?MedicineId=${MedicineId}`, {
+      method: "DELETE",
+      headers: { Accept: "application/json" }
+    });
+    const text = await response.text();
+    try { res.status(response.status).json(JSON.parse(text)); }
+    catch { res.status(response.status).json({ result: text || "deleted" }); }
+  } catch (e) {
+    console.error("[Medicine] Delete failed:", e.message);
+    res.status(503).json({ error: e.message });
+  }
+});
+
 // POST /medicine/create — create new medicine in OutSystems
 router.post("/create", async (req, res) => {
   try {

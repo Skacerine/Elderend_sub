@@ -135,6 +135,17 @@ export default function Medicare() {
   const calGrid = getMonthGrid(calYear, calMonth);
   const calMonthName = new Date(calYear, calMonth).toLocaleDateString("en-SG", { month: "long", year: "numeric" });
 
+  // Get dates for current week (Mon-Sun)
+  const weekDates = (() => {
+    const now = new Date();
+    const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1; // Mon=0
+    return DAYS.map((_, i) => {
+      const d = new Date(now);
+      d.setDate(now.getDate() - dayOfWeek + i);
+      return d;
+    });
+  })();
+
   // Calendar: which day of the selected calendar date
   const calDate = new Date(calYear, calMonth, calSelected);
   const calDayIdx = jsDay(calDate);
@@ -174,12 +185,16 @@ export default function Medicare() {
             {DAYS.map((d, i) => (
               <button key={d} className={`mc-week-day ${selectedDay === i ? "mc-week-day--active" : ""} ${i === todayIdx ? "mc-week-day--today" : ""}`} onClick={() => setSelectedDay(i)}>
                 <span className="mc-week-day-label">{d}</span>
-                <span className="mc-week-day-count">{medsForDay(i).length}</span>
+                <span className="mc-week-day-date">{weekDates[i].getDate()}</span>
+                {medsForDay(i).length > 0 && <span className="mc-week-day-dot" />}
               </button>
             ))}
           </div>
 
-          <div className="mc-day-title">{DAY_FULL[selectedDay]}{selectedDay === todayIdx ? " (Today)" : ""}</div>
+          <div className="mc-day-title">
+            {DAY_FULL[selectedDay]}, {weekDates[selectedDay].toLocaleDateString("en-SG", { day: "numeric", month: "long" })}
+            {selectedDay === todayIdx ? " (Today)" : ""}
+          </div>
 
           {medsForDay(selectedDay).length === 0 ? (
             <div className="mc-empty-small">No medicines scheduled for {DAY_FULL[selectedDay]}</div>

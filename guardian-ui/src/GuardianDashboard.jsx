@@ -145,7 +145,7 @@ export default function GuardianDashboard() {
   const alertData = activeAlert?.data || activeAlert?.incident || {};
   const features = alertData.features || {};
   const incidentId = alertData.id || alertData.incidentId || "—";
-  const elderlyId = alertData.elderlyId || "elderly-001";
+  const elderlyId = alertData.elderlyId || "1";
   const deviceId = alertData.deviceId || "PHONE_01";
   const score = alertData.score ?? activeAlert?.score ?? "—";
   const severity = alertData.severity || activeAlert?.severity || "LOW";

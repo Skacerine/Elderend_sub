@@ -19,7 +19,12 @@ async function postJson(url, body) {
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(10000)
   });
-  return r.json();
+  if (!r.ok) {
+    const text = await r.text().catch(() => "");
+    throw new Error(`${r.status}: ${text}`);
+  }
+  const text = await r.text();
+  return text ? JSON.parse(text) : { ok: true };
 }
 
 async function putJson(url, body) {
@@ -29,7 +34,12 @@ async function putJson(url, body) {
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(10000)
   });
-  return r.json();
+  if (!r.ok) {
+    const text = await r.text().catch(() => "");
+    throw new Error(`${r.status}: ${text}`);
+  }
+  const text = await r.text();
+  return text ? JSON.parse(text) : { ok: true };
 }
 
 function timeToMinutes(t) {
@@ -131,13 +141,21 @@ export default function Medicare() {
     e.preventDefault();
     setAddStatus(null);
     try {
-      const result = await postJson("/medicine/create", { ...addForm, ElderlyId: ELDERLY_ID });
+      await postJson("/medicine/create", {
+        Name: addForm.Name,
+        ElderlyId: ELDERLY_ID,
+        ReminderTime: addForm.ReminderTime,
+        Stock: addForm.Stock,
+        Dose: addForm.Dose,
+        Instructions: addForm.Instructions,
+        IsActive: true
+      });
       setAddStatus({ ok: true, msg: "Medicine added successfully" });
       setAddForm({ Name: "", ReminderTime: "08:00:00", Stock: 30, Dose: 1, Instructions: "", IsActive: true });
       setShowAddForm(false);
       loadData();
     } catch (err) {
-      setAddStatus({ ok: false, msg: "Failed to add medicine" });
+      setAddStatus({ ok: false, msg: "Failed to add medicine: " + (err.message || "Unknown error") });
     }
     setTimeout(() => setAddStatus(null), 5000);
   }
@@ -145,11 +163,21 @@ export default function Medicare() {
   async function handleRestock(med) {
     const newStock = (Number(med.Stock) || 0) + restockAmount;
     try {
-      await putJson("/medicine/update", { ...med, Stock: newStock, ElderlyId: ELDERLY_ID });
+      await putJson("/medicine/update", {
+        Name: med.Name,
+        ElderlyId: ELDERLY_ID,
+        ReminderTime: med.ReminderTime,
+        Stock: newStock,
+        Dose: Number(med.Dose) || 1,
+        Instructions: med.Instructions || "",
+        IsActive: true
+      });
       setRestockMed(null);
       setRestockAmount(0);
       loadData();
-    } catch { alert("Failed to update stock"); }
+    } catch (err) {
+      alert("Failed to update stock: " + (err.message || "Unknown error"));
+    }
   }
 
   const sorted = [...meds].sort((a, b) => timeToMinutes(a.ReminderTime) - timeToMinutes(b.ReminderTime));

@@ -1,7 +1,7 @@
 import express from "express";
 import { sendFallAlertSMS, sendFallAlertEmail } from "../services/notificationService.js";
 
-const MEDICINE_BASE_URL = "https://personal-s93qqbah.outsystemscloud.com/Medicine/rest/Medicine";
+const MEDICINE_BASE_URL = "https://personal-s93qqbah.outsystemscloud.com/ManageMedicine/rest/Medicine";
 
 const router = express.Router();
 
@@ -93,6 +93,23 @@ router.put("/update", async (req, res) => {
     catch { res.status(response.status).json({ result: text }); }
   } catch (e) {
     console.error("[Medicine] Update failed:", e.message);
+    res.status(503).json({ error: e.message });
+  }
+});
+
+// PUT /medicine/stock — update stock via OutSystems /stock/ endpoint
+router.put("/stock", async (req, res) => {
+  try {
+    const response = await fetch(`${MEDICINE_BASE_URL}/stock/`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(req.body)
+    });
+    const text = await response.text();
+    try { res.status(response.status).json(JSON.parse(text)); }
+    catch { res.status(response.status).json({ result: text }); }
+  } catch (e) {
+    console.error("[Medicine] Stock update failed:", e.message);
     res.status(503).json({ error: e.message });
   }
 });

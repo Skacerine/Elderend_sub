@@ -107,7 +107,7 @@ export default function Medicare() {
       onMessage: (message) => {
         if (message.type === "drop_alert") {
           const d = message.data || message.incident || {};
-          setPopupAlert({ source: "guardian", elderlyId: d.elderlyId || "-", score: d.score, severity: d.severity, timestamp: new Date().toISOString() });
+          setPopupAlert({ source: "guardian", elderlyId: d.elderlyId || "-", score: d.score, severity: d.severity, message: d.message, timestamp: new Date().toISOString() });
         }
       }
     });
@@ -136,7 +136,7 @@ export default function Medicare() {
   async function handleStockChange(med, delta) {
     const newStock = Math.max(0, (Number(med.Stock) || 0) + delta);
     try {
-      await api("PUT", "/medicine/update", { Name: med.Name, ElderlyId: ELDERLY_ID, ReminderTime: med.ReminderTime, Stock: newStock, Dose: Number(med.Dose) || 1, Instructions: med.Instructions || "", IsActive: true, Day: med.Day || dayIndexesToStr(getMedDays(med, scheduleMap)) });
+      await api("PUT", "/medicine/stock", { Name: med.Name, ElderlyId: ELDERLY_ID, Stock: newStock });
       setRestockMed(null); setRestockAmt(0); loadData();
     } catch (err) { alert("Failed: " + err.message); }
   }

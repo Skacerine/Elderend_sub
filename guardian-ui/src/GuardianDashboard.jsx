@@ -57,6 +57,7 @@ export default function GuardianDashboard() {
             elderlyId: alertData.elderlyId || "—",
             score: alertData.score,
             severity: alertData.severity,
+            message: alertData.message,
             timestamp: enrichedMessage.receivedAt
           });
           return;

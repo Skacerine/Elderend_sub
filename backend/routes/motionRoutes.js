@@ -87,8 +87,8 @@ router.post("/sample", async (req, res) => {
 
 router.post("/simulate-drop", async (req, res) => {
   const {
-    elderlyId = 1234567891234567,
-    guardianId = 1234567891234567,
+    elderlyId = 1,
+    guardianId = 1,
     deviceId = "PHONE_01"
   } = req.body || {};
 

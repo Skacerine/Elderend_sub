@@ -188,6 +188,7 @@ export default function ElderWatch() {
             elderlyId: alertData.elderlyId || "—",
             score: alertData.score,
             severity: alertData.severity,
+            message: alertData.message,
             timestamp: new Date().toISOString()
           });
         }

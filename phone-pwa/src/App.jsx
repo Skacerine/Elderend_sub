@@ -169,15 +169,10 @@ export default function App() {
         {errorMessage && <div className="ea-error">{errorMessage}</div>}
       </div>
 
-      {/* Emergency call */}
-      <button className="ea-emergency" onClick={() => alert("Calling guardian...\n(Simulated)")}>
-        <span className="ea-emergency-icon">&#x1F4DE;</span>
-        <span>Call My Guardian</span>
-      </button>
-
-      {/* Simulate drop — small, bottom */}
-      <button className="ea-simulate" onClick={handleSimulate}>
-        Simulate Drop (Test)
+      {/* Alert guardian button */}
+      <button className={`ea-emergency ${isSending ? "ea-emergency--sending" : ""}`} onClick={handleSimulate} disabled={isSending}>
+        <span className="ea-emergency-icon">&#x1F6A8;</span>
+        <span>{isSending ? "Alerting guardian..." : "Alert My Guardian!"}</span>
       </button>
 
       {/* Keep open reminder */}

@@ -5,12 +5,10 @@ const NOTIFICATION_BASE_URL = "https://smuedu-dev.outsystemsenterprise.com/SMULa
 const GUARDIAN_PHONE = "+6592369965";
 const GUARDIAN_EMAIL = "alec.ong.2024@computing.smu.edu.sg";
 
-function buildSmsMessage({ elderlyId, address, latitude, longitude, score, severity, timestamp }) {
+function buildSmsMessage({ elderlyId, address, latitude, longitude, score, timestamp }) {
   const time = new Date(timestamp).toLocaleTimeString("en-SG", { hour12: false });
-  const loc = address || (latitude != null ? `${latitude}, ${longitude}` : "Unknown location");
-  return `[ElderWatch ALERT] Fall detected for Elderly ${elderlyId} at ${time}. ` +
-    `Location: ${loc}. Score: ${score}, Severity: ${severity}. ` +
-    `Please check on them immediately.`;
+  const loc = address || (latitude != null ? `${latitude}, ${longitude}` : "Unknown");
+  return `[ElderWatch] Fall detected for Elderly ${elderlyId} at ${time}. Location: ${loc}. Score: ${score}. Check immediately.`;
 }
 
 function buildEmailBody({ elderlyId, address, latitude, longitude, score, severity, timestamp, features }) {
@@ -22,69 +20,25 @@ function buildEmailBody({ elderlyId, address, latitude, longitude, score, severi
     ? `https://www.google.com/maps?q=${latitude},${longitude}`
     : null;
 
-  return `
-    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0b1728;color:#e8f1ff;border-radius:16px;overflow:hidden;border:1px solid rgba(255,107,125,0.3);">
-      <div style="background:linear-gradient(135deg,#661626,#b01c38);padding:24px 28px;text-align:center;">
-        <div style="font-size:36px;margin-bottom:8px;">&#x1F6A8;</div>
-        <div style="font-size:22px;font-weight:900;color:#fff;">Fall Detected</div>
-        <div style="font-size:14px;color:rgba(255,255,255,0.8);margin-top:4px;">Immediate attention may be required</div>
-      </div>
-      <div style="padding:24px 28px;">
-        <table style="width:100%;border-collapse:collapse;font-size:14px;">
-          <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
-            <td style="padding:12px 0;color:#8da6c7;width:140px;">Elderly ID</td>
-            <td style="padding:12px 0;font-weight:700;">${elderlyId}</td>
-          </tr>
-          <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
-            <td style="padding:12px 0;color:#8da6c7;">Time</td>
-            <td style="padding:12px 0;font-weight:700;">${time}</td>
-          </tr>
-          <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
-            <td style="padding:12px 0;color:#8da6c7;">Risk Score</td>
-            <td style="padding:12px 0;font-weight:700;color:#ff6b7d;">${score ?? "N/A"}</td>
-          </tr>
-          <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
-            <td style="padding:12px 0;color:#8da6c7;">Severity</td>
-            <td style="padding:12px 0;font-weight:700;color:#ff6b7d;">${severity ?? "FALLEN"}</td>
-          </tr>
-          <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
-            <td style="padding:12px 0;color:#8da6c7;">Address</td>
-            <td style="padding:12px 0;font-weight:700;">${address || "Unknown"}</td>
-          </tr>
-          <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
-            <td style="padding:12px 0;color:#8da6c7;">Coordinates</td>
-            <td style="padding:12px 0;font-weight:700;">${coords}</td>
-          </tr>
-          ${features ? `
-          <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
-            <td style="padding:12px 0;color:#8da6c7;">Peak Acceleration</td>
-            <td style="padding:12px 0;">${features.peakAcceleration ?? "N/A"}</td>
-          </tr>
-          <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
-            <td style="padding:12px 0;color:#8da6c7;">Peak Rotation</td>
-            <td style="padding:12px 0;">${features.peakRotationRate ?? "N/A"}</td>
-          </tr>
-          <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
-            <td style="padding:12px 0;color:#8da6c7;">Post-Impact Stillness</td>
-            <td style="padding:12px 0;">${features.postImpactStillnessMs ?? "N/A"} ms</td>
-          </tr>
-          ` : ""}
-        </table>
-        ${mapsLink ? `
-        <div style="margin-top:20px;text-align:center;">
-          <a href="${mapsLink}" style="display:inline-block;padding:12px 28px;background:#5a8cff;color:#fff;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;">
-            View on Google Maps
-          </a>
-        </div>` : ""}
-        <div style="margin-top:20px;padding:14px;background:rgba(255,107,125,0.1);border:1px solid rgba(255,107,125,0.2);border-radius:10px;font-size:13px;color:#ff6b7d;text-align:center;">
-          Please check on the elderly person immediately. Call them or visit their location.
-        </div>
-      </div>
-      <div style="padding:16px 28px;text-align:center;font-size:11px;color:#6780a4;border-top:1px solid rgba(255,255,255,0.06);">
-        ElderWatch Guardian Alert System
-      </div>
-    </div>
-  `.trim();
+  let body = `<h2>&#x1F6A8; Fall Detected</h2>`;
+  body += `<p><i>Immediate attention may be required</i></p><hr>`;
+  body += `<p><b>Elderly ID:</b> ${elderlyId}</p>`;
+  body += `<p><b>Time:</b> ${time}</p>`;
+  body += `<p><b>Risk Score:</b> ${score ?? "N/A"}</p>`;
+  body += `<p><b>Severity:</b> ${severity ?? "FALLEN"}</p>`;
+  body += `<p><b>Address:</b> ${address || "Unknown"}</p>`;
+  body += `<p><b>Coordinates:</b> ${coords}</p>`;
+  if (features) {
+    body += `<hr><p><b>Peak Acceleration:</b> ${features.peakAcceleration ?? "N/A"}</p>`;
+    body += `<p><b>Peak Rotation:</b> ${features.peakRotationRate ?? "N/A"}</p>`;
+    body += `<p><b>Post-Impact Stillness:</b> ${features.postImpactStillnessMs ?? "N/A"} ms</p>`;
+  }
+  if (mapsLink) {
+    body += `<hr><p><b>Google Maps:</b> ${mapsLink}</p>`;
+  }
+  body += `<hr><p><b>Please check on the elderly person immediately.</b></p>`;
+  body += `<p><small>ElderWatch Guardian Alert System</small></p>`;
+  return body;
 }
 
 export async function sendFallAlertSMS(alertData) {

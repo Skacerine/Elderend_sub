@@ -2,7 +2,7 @@
 
 const NOTIFICATION_BASE_URL = "https://smuedu-dev.outsystemsenterprise.com/SMULab_Notification/rest/Notification";
 
-const GUARDIAN_PHONE = "92369965";
+const GUARDIAN_PHONE = "+6592369965";
 const GUARDIAN_EMAIL = "alec.ong.2024@computing.smu.edu.sg";
 
 function buildSmsMessage({ elderlyId, address, latitude, longitude, score, severity, timestamp }) {

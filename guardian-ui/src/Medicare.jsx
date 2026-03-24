@@ -1,4 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
+import AlertPopup from "./AlertPopup";
+import { connectToAlerts } from "./socket";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 const ELDERLY_ID = 111;
@@ -83,6 +85,7 @@ export default function Medicare() {
   const [restockMed, setRestockMed] = useState(null);
   const [restockAmt, setRestockAmt] = useState(0);
   const [scheduleMap, setScheduleMap] = useState({}); // medKey → dayIndex[]
+  const [popupAlert, setPopupAlert] = useState(null);
 
   const loadData = useCallback(async () => {
     let data = ELDERLY_ID ? await get(`/medicine/${ELDERLY_ID}`) : null;
@@ -97,6 +100,19 @@ export default function Medicare() {
   }, []);
 
   useEffect(() => { loadData(); const t = setInterval(loadData, 30000); return () => clearInterval(t); }, [loadData]);
+
+  // WebSocket listener for fall detection alerts
+  useEffect(() => {
+    const ws = connectToAlerts({
+      onMessage: (message) => {
+        if (message.type === "drop_alert") {
+          const d = message.data || message.incident || {};
+          setPopupAlert({ source: "guardian", elderlyId: d.elderlyId || "-", score: d.score, severity: d.severity, timestamp: new Date().toISOString() });
+        }
+      }
+    });
+    return () => ws.close();
+  }, []);
 
   // ── Actions ──
   async function handleNotify() {
@@ -396,6 +412,8 @@ export default function Medicare() {
           )}
         </div>
       )}
+
+      <AlertPopup alert={popupAlert} onDismiss={() => setPopupAlert(null)} />
     </div>
   );
 }

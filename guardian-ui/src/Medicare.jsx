@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 const ELDERLY_ID = 111;
@@ -10,15 +10,22 @@ async function get(url) {
   } catch { return null; }
 }
 
+async function post(url, body) {
+  try {
+    const r = await fetch(`${API_BASE}${url}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(10000)
+    });
+    return r.json();
+  } catch { return null; }
+}
+
 function timeToMinutes(t) {
   if (!t) return 99999;
   const [h, m] = t.split(":").map(Number);
   return h * 60 + (m || 0);
-}
-
-function nowStr() {
-  const n = new Date();
-  return `${n.getHours().toString().padStart(2, "0")}:${n.getMinutes().toString().padStart(2, "0")}:00`;
 }
 
 function formatTime(t) {
@@ -27,25 +34,15 @@ function formatTime(t) {
   return `${h % 12 || 12}:${(m || 0).toString().padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`;
 }
 
-function minutesUntil(t) {
-  return timeToMinutes(t) - timeToMinutes(nowStr());
-}
-
-function medKey(m) {
-  return `${m.Name}_${m.ReminderTime}`;
-}
-
 export default function Medicare() {
   const [meds, setMeds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [acknowledged, setAcknowledged] = useState(new Set());
-  const [alertMed, setAlertMed] = useState(null);
   const [clock, setClock] = useState("");
-  const snoozed = useRef({});
+  const [sending, setSending] = useState(false);
+  const [notifyResult, setNotifyResult] = useState(null);
 
   const loadData = useCallback(async () => {
-    // Try specific elderly ID first, fall back to all medicines
     let data = ELDERLY_ID ? await get(`/medicine/${ELDERLY_ID}`) : null;
     if (!data) data = await get("/medicine");
     if (data) {
@@ -59,7 +56,6 @@ export default function Medicare() {
     setLoading(false);
   }, []);
 
-  // Clock tick + alert check
   useEffect(() => {
     function tick() {
       const n = new Date();
@@ -71,56 +67,33 @@ export default function Medicare() {
     return () => clearInterval(timer);
   }, []);
 
-  // Check alerts every second
-  useEffect(() => {
-    function checkAlerts() {
-      if (alertMed) return;
-      const nowM = timeToMinutes(nowStr());
-      for (const med of meds) {
-        const key = medKey(med);
-        if (acknowledged.has(key)) continue;
-        if (snoozed.current[key] && Date.now() < snoozed.current[key]) continue;
-        const diff = timeToMinutes(med.ReminderTime) - nowM;
-        if (diff >= 0 && diff <= 2) { setAlertMed(med); return; }
-      }
-    }
-    const timer = setInterval(checkAlerts, 1000);
-    return () => clearInterval(timer);
-  }, [meds, acknowledged, alertMed]);
-
-  // Initial load + polling
   useEffect(() => {
     loadData();
     const timer = setInterval(loadData, 30000);
     return () => clearInterval(timer);
   }, [loadData]);
 
-  function markTaken(key) {
-    setAcknowledged(prev => new Set([...prev, key]));
+  async function handleSendNotification() {
+    if (sending || meds.length === 0) return;
+    setSending(true);
+    setNotifyResult(null);
+    const result = await post("/medicine/notify", { elderlyId: ELDERLY_ID, medicines: meds });
+    setNotifyResult(result);
+    setSending(false);
+    setTimeout(() => setNotifyResult(null), 8000);
   }
 
-  function confirmAlert() {
-    if (!alertMed) return;
-    markTaken(medKey(alertMed));
-    setAlertMed(null);
-  }
-
-  function snoozeAlert() {
-    if (!alertMed) return;
-    snoozed.current[medKey(alertMed)] = Date.now() + 5 * 60 * 1000;
-    setAlertMed(null);
-  }
-
-  // Derived data
+  // Split medicines into today (all active) and tomorrow (same list, for demo purposes)
   const sorted = [...meds].sort((a, b) => timeToMinutes(a.ReminderTime) - timeToMinutes(b.ReminderTime));
-  const nextMed = sorted.find(m => !acknowledged.has(medKey(m)) && timeToMinutes(m.ReminderTime) >= timeToMinutes(nowStr()) - 2) || null;
   const outOfStock = meds.filter(m => Number(m.Stock) === 0 || m.Stock == null);
   const lowStock = meds.filter(m => Number(m.Stock) > 0 && Number(m.Stock) <= 5);
-  const allDone = meds.length > 0 && meds.every(m => acknowledged.has(medKey(m)));
 
   const h = new Date().getHours();
   const greeting = h < 12 ? "morning" : h < 18 ? "afternoon" : "evening";
-  const dateStr = new Date().toLocaleDateString("en-SG", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const today = new Date();
+  const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+  const dateStr = today.toLocaleDateString("en-SG", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const tomorrowStr = tomorrow.toLocaleDateString("en-SG", { weekday: "long", day: "numeric", month: "long" });
 
   if (loading) {
     return (
@@ -175,31 +148,24 @@ export default function Medicare() {
         </div>
       )}
 
-      {/* Next card */}
-      {nextMed && !allDone && (
-        <div className="mc-next-card">
-          <div className="mc-next-body">
-            <div className="mc-next-label">Next reminder</div>
-            <div className="mc-next-name">{nextMed.Name}</div>
-            <div className="mc-next-time">Scheduled at {formatTime(nextMed.ReminderTime)}</div>
+      {/* Test notification button */}
+      <div style={{ margin: "0.75rem 1.25rem" }}>
+        <button
+          className="mc-btn-take"
+          style={{ width: "100%", opacity: sending ? 0.6 : 1 }}
+          onClick={handleSendNotification}
+          disabled={sending || meds.length === 0}
+        >
+          {sending ? "Sending notification..." : "Send Medicine Reminder (Test SMS + Email)"}
+        </button>
+        {notifyResult && (
+          <div className="mc-notify-result">
+            SMS: {notifyResult.sms?.status || notifyResult.sms?.error || "sent"} | Email: {notifyResult.email?.status || notifyResult.email?.error || "sent"}
           </div>
-          {minutesUntil(nextMed.ReminderTime) >= 0 && minutesUntil(nextMed.ReminderTime) <= 120 && (
-            <div className="mc-next-badge">
-              <div className="mc-next-badge-num">{minutesUntil(nextMed.ReminderTime) < 1 ? "<1" : minutesUntil(nextMed.ReminderTime)}</div>
-              <div className="mc-next-badge-unit">min</div>
-            </div>
-          )}
-        </div>
-      )}
-      {allDone && (
-        <div className="mc-all-done">
-          <div style={{ fontSize: "2rem" }}>&#x2705;</div>
-          <h3>All done for today!</h3>
-          <p>You have taken all your medicines. Well done.</p>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Med cards */}
+      {/* Today's medicines */}
       {meds.length === 0 ? (
         <div className="mc-empty">
           <h3>No medications found</h3>
@@ -207,23 +173,17 @@ export default function Medicare() {
         </div>
       ) : (
         <>
-          <div className="mc-section-label">All medications today</div>
+          <div className="mc-section-label">Today's medications</div>
           {sorted.map((med) => {
-            const key = medKey(med);
-            const isNext = nextMed && medKey(nextMed) === key;
-            const isDone = acknowledged.has(key);
             const dose = Number(med.Dose) || 1;
             const stock = med.Stock == null ? 0 : Number(med.Stock);
-
             return (
-              <div key={key} className={`mc-card ${isNext && !isDone ? "mc-card--next" : ""} ${isDone ? "mc-card--done" : ""}`}>
+              <div key={`today-${med.Name}-${med.ReminderTime}`} className="mc-card">
                 <div className="mc-card-body">
                   <div className="mc-card-top">
                     <div>
                       <div className="mc-card-name-row">
                         <span className="mc-card-name">{med.Name}</span>
-                        {isNext && !isDone && <span className="mc-pill-next">Next</span>}
-                        {isDone && <span className="mc-pill-done">Taken</span>}
                       </div>
                       <div className="mc-card-time">{formatTime(med.ReminderTime)}</div>
                     </div>
@@ -234,36 +194,35 @@ export default function Medicare() {
                   <p className="mc-card-instr">{med.Instructions || "No special instructions."}</p>
                   <div className="mc-card-dose">{dose} dose{dose > 1 ? "s" : ""}</div>
                 </div>
-                {!isDone && isNext && (
-                  <div className="mc-card-footer">
-                    <button className="mc-btn-take" onClick={() => markTaken(key)}>Mark as taken</button>
+              </div>
+            );
+          })}
+
+          {/* Tomorrow's medicines */}
+          <div className="mc-section-label">Tomorrow — {tomorrowStr}</div>
+          {sorted.map((med) => {
+            const dose = Number(med.Dose) || 1;
+            const stock = med.Stock == null ? 0 : Number(med.Stock);
+            return (
+              <div key={`tmr-${med.Name}-${med.ReminderTime}`} className="mc-card mc-card--tomorrow">
+                <div className="mc-card-body">
+                  <div className="mc-card-top">
+                    <div>
+                      <div className="mc-card-name-row">
+                        <span className="mc-card-name">{med.Name}</span>
+                      </div>
+                      <div className="mc-card-time">{formatTime(med.ReminderTime)}</div>
+                    </div>
+                    <span className={`mc-stock ${stock === 0 ? "mc-stock--out" : stock <= 5 ? "mc-stock--low" : "mc-stock--ok"}`}>
+                      {stock === 0 ? "Out of stock" : stock <= 5 ? `${stock} left` : `${stock} in stock`}
+                    </span>
                   </div>
-                )}
-                {isDone && (
-                  <div className="mc-card-footer">
-                    <div className="mc-btn-taken">Taken today</div>
-                  </div>
-                )}
+                  <div className="mc-card-dose">{dose} dose{dose > 1 ? "s" : ""}</div>
+                </div>
               </div>
             );
           })}
         </>
-      )}
-
-      {/* Medicine alert popup */}
-      {alertMed && (
-        <div className="mc-alert-overlay" onClick={snoozeAlert}>
-          <div className="mc-alert-box" onClick={e => e.stopPropagation()}>
-            <div className="mc-alert-ring">&#x1F514;</div>
-            <div className="mc-alert-head">Time for your medicine</div>
-            <div className="mc-alert-name">{alertMed.Name}</div>
-            <div className="mc-alert-time">{formatTime(alertMed.ReminderTime)}</div>
-            <div className="mc-alert-instr">{alertMed.Instructions || "No special instructions."}</div>
-            <div className="mc-alert-dose">{Number(alertMed.Dose) || 1} dose{(Number(alertMed.Dose) || 1) > 1 ? "s" : ""}</div>
-            <button className="mc-btn-confirm" onClick={confirmAlert}>I took it</button>
-            <button className="mc-btn-snooze" onClick={snoozeAlert}>Remind me again in 5 minutes</button>
-          </div>
-        </div>
       )}
     </div>
   );

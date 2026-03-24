@@ -449,6 +449,154 @@ button {
   to { opacity: 1; }
 }
 
+/* ── Medicine list on phone ── */
+.phone-meds {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 18px;
+  overflow: hidden;
+}
+
+.phone-meds-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.phone-meds-icon {
+  font-size: 1.4rem;
+}
+
+.phone-meds-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.phone-meds-loading,
+.phone-meds-empty {
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 12px 0;
+}
+
+.phone-meds-list {
+  display: grid;
+  gap: 10px;
+}
+
+.phone-med-item {
+  background: var(--panel-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  transition: border-color 0.2s;
+}
+
+.phone-med-item:hover {
+  border-color: var(--border-strong);
+}
+
+.phone-med-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.phone-med-detail {
+  margin-top: 4px;
+  font-size: 0.88rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.phone-med-warn {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.phone-med-low {
+  color: var(--yellow);
+  font-weight: 700;
+}
+
+.phone-med-instr {
+  margin-top: 8px;
+  font-size: 0.84rem;
+  color: var(--muted-2);
+  line-height: 1.5;
+}
+
+/* ── Compact monitoring status ── */
+.phone-state--compact {
+  padding: 16px 18px;
+}
+
+.phone-state--compact .phone-kicker {
+  font-size: 0.7rem;
+}
+
+.phone-compact-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.phone-compact-title {
+  font-size: 1.3rem;
+  font-weight: 900;
+  line-height: 1.2;
+  margin-top: 6px;
+  background: linear-gradient(135deg, var(--text) 0%, var(--cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.phone-compact-copy {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.phone-compact-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.phone-compact-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.phone-compact-stat-label {
+  font-size: 0.65rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.phone-compact-stat-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.phone-error--compact {
+  margin-top: 10px;
+  padding: 10px;
+  font-size: 0.85rem;
+}
+
 @media (max-width: 560px) {
   .phone-app {
     padding: 14px;
@@ -470,5 +618,18 @@ button {
 
   .phone-button {
     min-height: 82px;
+  }
+
+  .phone-compact-row {
+    flex-direction: column;
+  }
+
+  .phone-compact-stats {
+    flex-direction: row;
+    gap: 16px;
+  }
+
+  .phone-compact-stat {
+    align-items: flex-start;
   }
 }

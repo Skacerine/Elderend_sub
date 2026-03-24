@@ -88,7 +88,7 @@ function buildEmailBody({ elderlyId, address, latitude, longitude, score, severi
 }
 
 export async function sendFallAlertSMS(alertData) {
-  const message = buildSmsMessage(alertData);
+  const message = alertData._overrideMessage || buildSmsMessage(alertData);
   try {
     const response = await fetch(`${NOTIFICATION_BASE_URL}/SendSMS`, {
       method: "POST",
@@ -105,8 +105,8 @@ export async function sendFallAlertSMS(alertData) {
 }
 
 export async function sendFallAlertEmail(alertData) {
-  const emailBody = buildEmailBody(alertData);
-  const emailSubject = `[ALERT] Fall Detected — Elderly ${alertData.elderlyId}`;
+  const emailBody = alertData._overrideEmail?.body || buildEmailBody(alertData);
+  const emailSubject = alertData._overrideEmail?.subject || `[ALERT] Fall Detected — Elderly ${alertData.elderlyId}`;
   try {
     const response = await fetch(`${NOTIFICATION_BASE_URL}/SendEmail`, {
       method: "POST",

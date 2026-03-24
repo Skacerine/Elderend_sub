@@ -22,6 +22,7 @@ const spec = {
     { name: "Alerts", description: "Geofence alerts and SSE streaming" },
     { name: "Notifications", description: "Guardian notification log" },
     { name: "Medicine", description: "Medicine management (OutSystems proxy)" },
+    { name: "External", description: "External system integration (OutSystems)" },
     { name: "System", description: "Health checks and system info" }
   ],
   paths: {
@@ -237,6 +238,27 @@ const spec = {
           }
         } } } },
         responses: { 200: { description: "{ sms: {...}, email: {...} }" } } }
+    },
+
+    // ── External ──
+    "/external/alert": {
+      post: { tags: ["External"], summary: "Receive alert from external system (OutSystems)",
+        description: "Triggers the full alert pipeline: creates incident, broadcasts WebSocket to all guardian pages (popup), sends SMS + email to guardian. Designed for OutSystems or any external system to POST alerts.",
+        requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["elderly_id"],
+          properties: {
+            elderly_id: { type: "integer", description: "The elderly person's ID", example: 111 },
+            text: { type: "string", description: "Alert message/reason", example: "Fall detected by external sensor" }
+          }
+        } } } },
+        responses: {
+          200: { description: "Alert triggered successfully", content: { "application/json": { schema: { type: "object", properties: {
+            success: { type: "boolean" },
+            incident: { type: "object" },
+            message: { type: "string" }
+          } } } } },
+          400: { description: "Missing elderly_id" }
+        }
+      }
     }
   }
 };

@@ -1121,11 +1121,11 @@ button {
 }
 
 /* ═══════════════════════════════════════════════════
-   Medicare Page Styles
+   Medicare Page Styles — Overhauled
    ═══════════════════════════════════════════════════ */
 
 .mc-app {
-  max-width: 520px;
+  max-width: 680px;
   margin: 0 auto;
   min-height: calc(100vh - 52px);
   padding-bottom: 3rem;
@@ -1193,11 +1193,16 @@ button {
   display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
 }
 .mc-brand-name { font-size: 1.2rem; font-weight: 700; color: #1A1A1A; }
-.mc-clock {
-  background: #EDF7F2; border: 1.5px solid #D6EDE4; border-radius: 12px;
-  padding: 0.4rem 0.875rem; font-size: 1.1rem; font-weight: 700;
-  color: #1A5C40; font-variant-numeric: tabular-nums;
+.mc-header-stats { display: flex; gap: 6px; }
+.mc-hstat {
+  display: flex; flex-direction: column; align-items: center;
+  background: #EDF7F2; border: 1px solid #D6EDE4; border-radius: 10px;
+  padding: 4px 12px; min-width: 48px;
 }
+.mc-hstat--warn { background: #FFF5F4; border-color: #F5C6C2; }
+.mc-hstat-num { font-size: 1.1rem; font-weight: 800; color: #1A5C40; line-height: 1.2; }
+.mc-hstat--warn .mc-hstat-num { color: #C0392B; }
+.mc-hstat-label { font-size: 0.55rem; font-weight: 700; color: #9A9A9A; text-transform: uppercase; letter-spacing: 0.05em; }
 
 /* Greeting */
 .mc-greeting { padding: 1.75rem 1.5rem 0.5rem; }
@@ -1547,3 +1552,170 @@ button {
   margin-top: 6px; font-size: 0.85rem; color: #1A5C40; font-weight: 600;
   background: #EDF7F2; border-radius: 10px; padding: 8px 10px;
 }
+
+/* ── Tabs ── */
+.mc-tabs {
+  display: flex; margin: 0.5rem 1.25rem 0; background: #E4E0D8;
+  border-radius: 14px; padding: 3px;
+}
+.mc-tab {
+  flex: 1; padding: 10px 8px; border: none; border-radius: 12px;
+  font-family: inherit; font-size: 0.82rem; font-weight: 700;
+  cursor: pointer; background: transparent; color: #6B6B6B;
+  text-align: center; transition: all 0.15s;
+}
+.mc-tab--active { background: #fff; color: #1A5C40; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.mc-tab:hover:not(.mc-tab--active) { color: #3D3D3D; }
+
+.mc-tab-content { padding: 0.75rem 1.25rem 0; }
+
+/* ── Week bar (Schedule tab) ── */
+.mc-week-bar { display: flex; gap: 4px; margin-bottom: 12px; }
+.mc-week-day {
+  flex: 1; border: 1.5px solid #E4E0D8; border-radius: 12px;
+  padding: 8px 2px; text-align: center; cursor: pointer;
+  background: #fff; transition: all 0.15s;
+}
+.mc-week-day:hover { border-color: #227A54; }
+.mc-week-day--active { border-color: #227A54; background: #227A54; }
+.mc-week-day--active .mc-week-day-label { color: #fff; }
+.mc-week-day--active .mc-week-day-count { color: rgba(255,255,255,.8); }
+.mc-week-day--today { box-shadow: 0 0 0 2px rgba(34,122,84,.15); }
+.mc-week-day-label { display: block; font-size: 0.7rem; font-weight: 700; color: #3D3D3D; }
+.mc-week-day-count { display: block; font-size: 0.9rem; font-weight: 800; color: #1A5C40; margin-top: 2px; }
+
+.mc-day-title {
+  font-size: 1.1rem; font-weight: 800; color: #1A1A1A; margin-bottom: 10px;
+}
+
+.mc-empty-small {
+  text-align: center; color: #9A9A9A; font-size: 0.85rem;
+  padding: 24px 12px; font-weight: 500;
+}
+
+/* ── Schedule cards ── */
+.mc-schedule-list { display: flex; flex-direction: column; gap: 8px; }
+.mc-sched-card {
+  display: flex; gap: 12px; background: #fff; border: 1.5px solid #E4E0D8;
+  border-radius: 16px; padding: 14px; transition: border-color 0.15s;
+}
+.mc-sched-card:hover { border-color: #2E9469; }
+.mc-sched-time {
+  font-size: 0.8rem; font-weight: 800; color: #227A54;
+  min-width: 68px; padding-top: 2px; white-space: nowrap;
+}
+.mc-sched-body { flex: 1; min-width: 0; }
+.mc-sched-name { font-size: 1.05rem; font-weight: 700; color: #1A1A1A; }
+.mc-sched-meta { font-size: 0.8rem; color: #6B6B6B; margin-top: 3px; line-height: 1.4; }
+.mc-sched-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+
+.mc-tag {
+  font-size: 0.65rem; font-weight: 700; padding: 2px 8px;
+  border-radius: 10px; white-space: nowrap;
+}
+.mc-tag--green { background: #EDF7F2; color: #1A5C40; }
+.mc-tag--amber { background: #FFFAEA; color: #7A5500; }
+.mc-tag--red { background: #FFF5F4; color: #C0392B; }
+.mc-tag--blue { background: #EBF3FF; color: #2563EB; }
+
+/* ── Send reminder button ── */
+.mc-notify-btn {
+  width: 100%; margin-top: 16px; padding: 14px; background: #227A54;
+  color: white; border: none; border-radius: 14px; font-family: inherit;
+  font-size: 0.95rem; font-weight: 700; cursor: pointer;
+  box-shadow: 0 4px 14px rgba(34,122,84,.28); transition: all 0.15s;
+}
+.mc-notify-btn:hover { background: #1A5C40; }
+.mc-notify-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* ── Calendar ── */
+.mc-cal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.mc-cal-title { font-size: 1.05rem; font-weight: 800; color: #1A1A1A; }
+.mc-cal-nav {
+  width: 36px; height: 36px; border-radius: 10px; border: 1.5px solid #E4E0D8;
+  background: #fff; color: #3D3D3D; font-size: 1rem; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.mc-cal-nav:hover { border-color: #227A54; color: #227A54; }
+
+.mc-cal-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+}
+.mc-cal-head {
+  text-align: center; font-size: 0.65rem; font-weight: 700; color: #9A9A9A;
+  text-transform: uppercase; padding: 4px 0;
+}
+.mc-cal-cell {
+  aspect-ratio: 1; border-radius: 10px; border: 1.5px solid transparent;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; cursor: pointer; transition: all 0.12s; background: #fff;
+}
+.mc-cal-cell:hover { border-color: #D6EDE4; }
+.mc-cal-cell--empty { background: transparent; cursor: default; }
+.mc-cal-cell--today { border-color: #227A54; box-shadow: 0 0 0 2px rgba(34,122,84,.12); }
+.mc-cal-cell--selected { background: #227A54; border-color: #227A54; }
+.mc-cal-cell--selected .mc-cal-num { color: #fff; }
+.mc-cal-num { font-size: 0.82rem; font-weight: 700; color: #3D3D3D; }
+.mc-cal-dots { display: flex; gap: 2px; }
+.mc-cal-dot { width: 4px; height: 4px; border-radius: 50%; background: #227A54; }
+.mc-cal-cell--selected .mc-cal-dot { background: rgba(255,255,255,.7); }
+.mc-cal-more { font-size: 0.5rem; font-weight: 700; color: #9A9A9A; }
+.mc-cal-cell--selected .mc-cal-more { color: rgba(255,255,255,.7); }
+
+.mc-cal-detail {
+  margin-top: 14px; background: #fff; border: 1.5px solid #E4E0D8;
+  border-radius: 16px; padding: 14px;
+}
+.mc-cal-detail-title { font-size: 0.9rem; font-weight: 800; color: #1A1A1A; margin-bottom: 8px; }
+.mc-cal-med {
+  display: flex; align-items: center; gap: 10px; padding: 8px 0;
+  border-bottom: 1px solid #F0ECE4; font-size: 0.85rem;
+}
+.mc-cal-med:last-child { border-bottom: none; }
+.mc-cal-med-time { font-weight: 700; color: #227A54; min-width: 65px; }
+.mc-cal-med-name { flex: 1; font-weight: 600; color: #1A1A1A; }
+.mc-cal-med-dose { color: #9A9A9A; font-size: 0.78rem; font-weight: 600; }
+
+/* ── Inventory tab ── */
+.mc-inv-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
+}
+.mc-inv-title { font-size: 1rem; font-weight: 800; color: #1A1A1A; }
+
+.mc-inv-card {
+  background: #fff; border: 1.5px solid #E4E0D8; border-radius: 16px;
+  padding: 14px; margin-bottom: 8px; transition: border-color 0.15s;
+}
+.mc-inv-card:hover { border-color: #D6EDE4; }
+.mc-inv-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.mc-inv-name { font-size: 1.05rem; font-weight: 700; color: #1A1A1A; }
+.mc-inv-meta { font-size: 0.8rem; color: #6B6B6B; margin-top: 2px; }
+
+.mc-inv-stats {
+  display: flex; align-items: center; gap: 12px; margin-top: 10px;
+}
+.mc-inv-stat { display: flex; flex-direction: column; }
+.mc-inv-stat-label { font-size: 0.6rem; font-weight: 700; color: #9A9A9A; text-transform: uppercase; }
+.mc-inv-stat-val { font-size: 1rem; font-weight: 800; margin-top: 1px; }
+
+.mc-text--green { color: #1A5C40; }
+.mc-text--amber { color: #7A5500; }
+.mc-text--red { color: #C0392B; }
+
+/* ── Day picker (for scheduling) ── */
+.mc-day-picker {
+  display: flex; gap: 4px;
+}
+.mc-day-picker--small { margin-top: 8px; }
+.mc-day-pick {
+  flex: 1; padding: 6px 2px; border: 1.5px solid #E4E0D8; border-radius: 8px;
+  background: #fff; color: #9A9A9A; font-family: inherit; font-size: 0.72rem;
+  font-weight: 700; cursor: pointer; text-align: center; transition: all 0.12s;
+}
+.mc-day-pick--sm { padding: 4px 2px; font-size: 0.65rem; border-radius: 6px; }
+.mc-day-pick--on { background: #227A54; border-color: #227A54; color: #fff; }
+.mc-day-pick:hover:not(.mc-day-pick--on) { border-color: #2E9469; color: #3D3D3D; }

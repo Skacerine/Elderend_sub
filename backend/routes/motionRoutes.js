@@ -4,6 +4,7 @@ import { createIncident } from "../services/incidentService.js";
 import { getIncidents, getLatestIncidentByElderlyId } from "../store/incidentStore.js";
 import { postElderlyLogToOutSystems } from "../services/outsystemsService.js";
 import { getElderlyLocation } from "../services/locationService.js";
+import { sendFallAlertNotifications } from "../services/notificationService.js";
 
 const router = express.Router();
 
@@ -56,6 +57,18 @@ router.post("/sample", async (req, res) => {
     } catch (error) {
       console.error("Failed to sync incident to OutSystems:", error.message);
     }
+
+    // Send SMS + Email notifications (fire and forget)
+    sendFallAlertNotifications({
+      elderlyId,
+      address: finalAddr,
+      latitude: finalLat,
+      longitude: finalLng,
+      score: result.score,
+      severity: result.severity,
+      timestamp: timestamp || new Date().toISOString(),
+      features
+    }).catch(err => console.error("Notification error:", err.message));
 
     return res.json({
       detected: true,
@@ -110,6 +123,18 @@ router.post("/simulate-drop", async (req, res) => {
       status: "FALLEN",
       timestamp: new Date().toISOString()
     });
+
+    // Send SMS + Email notifications (fire and forget)
+    sendFallAlertNotifications({
+      elderlyId,
+      address,
+      latitude,
+      longitude,
+      score: 100,
+      severity: "FALLEN",
+      timestamp: new Date().toISOString(),
+      features
+    }).catch(err => console.error("Notification error:", err.message));
 
     return res.json({
       detected: true,

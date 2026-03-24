@@ -6,50 +6,35 @@ const STORAGE_KEY = "elderall_monitoring_enabled";
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://elderend-backend.onrender.com";
 const ELDERLY_ID = 111;
 
-function prettyTime(value) {
-  if (!value) return "No alerts yet";
-  try {
-    return new Date(value).toLocaleString();
-  } catch {
-    return String(value);
-  }
-}
-
-function formatMedTime(t) {
+function fmtTime(t) {
   if (!t) return "-";
   const [h, m] = t.split(":").map(Number);
   return `${h % 12 || 12}:${(m || 0).toString().padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`;
 }
 
-function getStateTone({ isMonitoring, isSending, lastResponse, errorMessage }) {
-  if (errorMessage) {
-    return { chip: "Issue", dot: "state-dot--red", title: "Monitoring unavailable", copy: "Check permissions or connection." };
-  }
-  if (lastResponse?.detected) {
-    return { chip: "Alert sent", dot: "state-dot--red", title: "Help alert sent", copy: "Your guardian has been notified." };
-  }
-  if (isSending) {
-    return { chip: "Sending", dot: "state-dot--yellow", title: "Checking movement", copy: "Please wait." };
-  }
-  if (isMonitoring) {
-    return { chip: "Protected", dot: "state-dot--green", title: "Monitoring active", copy: "Fall protection is on." };
-  }
-  return { chip: "Paused", dot: "state-dot--yellow", title: "Monitoring paused", copy: "Press enable to start." };
+function fmtClock() {
+  const n = new Date(), h = n.getHours(), m = n.getMinutes();
+  return `${h % 12 || 12}:${m.toString().padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`;
 }
 
 export default function App() {
   const [isMonitoring, setIsMonitoring] = useState(false);
-  const [status, setStatus] = useState("Checking app status...");
+  const [status, setStatus] = useState("Starting...");
   const [lastResponse, setLastResponse] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [lastAlertTime, setLastAlertTime] = useState(null);
   const [meds, setMeds] = useState([]);
   const [medsLoading, setMedsLoading] = useState(true);
+  const [clock, setClock] = useState(fmtClock());
 
-  const elderlyId = 1;
-  const guardianId = 1;
-  const deviceId = "PHONE_01";
+  const elderlyId = 1, guardianId = 1, deviceId = "PHONE_01";
+
+  // Clock
+  useEffect(() => {
+    const t = setInterval(() => setClock(fmtClock()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   // Load medicines
   useEffect(() => {
@@ -61,191 +46,143 @@ export default function App() {
           const arr = Array.isArray(data) ? data : [data];
           setMeds(arr.filter(m => m.IsActive === true || m.IsActive === 1 || m.IsActive === "true" || m.IsActive === "1"));
         }
-      } catch (e) {
-        console.error("Failed to load medicines:", e.message);
-      }
+      } catch (e) { console.error("Meds load error:", e.message); }
       setMedsLoading(false);
     }
     loadMeds();
-    const timer = setInterval(loadMeds, 60000);
-    return () => clearInterval(timer);
+    const t = setInterval(loadMeds, 60000);
+    return () => clearInterval(t);
   }, []);
 
-  const monitor = useMemo(() => {
-    return createMotionMonitor({
-      onStart: () => { setIsMonitoring(true); setStatus("Monitoring Active"); setErrorMessage(""); },
-      onStop: () => { setIsMonitoring(false); setStatus("Monitoring Paused"); },
-      onError: (message) => { setErrorMessage(message); setStatus("Monitoring Unavailable"); },
-      onFeatureReady: async (features) => {
-        try {
-          setIsSending(true);
-          setStatus("Motion anomaly detected. Sending alert...");
-          const result = await sendMotionSample({
-            elderlyId, guardianId, deviceId,
-            timestamp: new Date().toISOString(),
-            latitude: 1.2966, longitude: 103.8502,
-            address: "Tanjong Pagar, Singapore",
-            features
-          });
-          setLastResponse(result);
-          setLastAlertTime(new Date().toISOString());
-          setStatus(result.detected ? "Possible drop detected" : "Monitoring Active");
-        } catch (error) {
-          setErrorMessage(error.message || "Failed to send motion sample.");
-          setStatus("Monitoring Active");
-        } finally {
-          setIsSending(false);
-        }
-      }
-    });
-  }, []);
+  const monitor = useMemo(() => createMotionMonitor({
+    onStart: () => { setIsMonitoring(true); setStatus("Protected"); setErrorMessage(""); },
+    onStop: () => { setIsMonitoring(false); setStatus("Paused"); },
+    onError: (msg) => { setErrorMessage(msg); setStatus("Issue"); },
+    onFeatureReady: async (features) => {
+      try {
+        setIsSending(true); setStatus("Checking...");
+        const result = await sendMotionSample({ elderlyId, guardianId, deviceId, timestamp: new Date().toISOString(), latitude: 1.2966, longitude: 103.8502, address: "Tanjong Pagar, Singapore", features });
+        setLastResponse(result); setLastAlertTime(new Date().toISOString());
+        setStatus(result.detected ? "Alert sent" : "Protected");
+      } catch (error) { setErrorMessage(error.message || "Send failed"); setStatus("Protected"); }
+      finally { setIsSending(false); }
+    }
+  }), []);
 
   useEffect(() => {
-    const shouldResume = localStorage.getItem(STORAGE_KEY) === "true";
-    if (shouldResume) { handleEnableMonitoring(); } else { setStatus("Monitoring Paused"); }
-    return () => { monitor.stop(); };
+    if (localStorage.getItem(STORAGE_KEY) === "true") handleEnable();
+    else setStatus("Paused");
+    return () => monitor.stop();
   }, [monitor]);
 
-  async function handleEnableMonitoring() {
-    try {
-      setErrorMessage(""); setStatus("Starting monitoring...");
-      await monitor.start();
-      localStorage.setItem(STORAGE_KEY, "true");
-    } catch (error) {
-      localStorage.setItem(STORAGE_KEY, "false");
-      setIsMonitoring(false); setStatus("Monitoring Unavailable");
-      setErrorMessage(error.message || "Unable to start monitoring.");
-    }
+  async function handleEnable() {
+    try { setErrorMessage(""); await monitor.start(); localStorage.setItem(STORAGE_KEY, "true"); }
+    catch (e) { localStorage.setItem(STORAGE_KEY, "false"); setIsMonitoring(false); setStatus("Issue"); setErrorMessage(e.message || "Cannot start"); }
   }
 
-  function handlePauseMonitoring() {
-    monitor.stop();
-    localStorage.setItem(STORAGE_KEY, "false");
-    setIsMonitoring(false); setStatus("Monitoring Paused");
+  function handlePause() { monitor.stop(); localStorage.setItem(STORAGE_KEY, "false"); setIsMonitoring(false); setStatus("Paused"); }
+
+  async function handleSimulate() {
+    try { setErrorMessage(""); setStatus("Sending...");
+      const result = await simulateDrop({ elderlyId, guardianId, deviceId, latitude: 1.2966, longitude: 103.8502, address: "Tanjong Pagar, Singapore" });
+      setLastResponse(result); setLastAlertTime(new Date().toISOString()); setStatus("Alert sent");
+    } catch (e) { setErrorMessage(e.message || "Failed"); setStatus(isMonitoring ? "Protected" : "Paused"); }
   }
 
-  async function handleSimulateDrop() {
-    try {
-      setErrorMessage(""); setStatus("Sending simulated drop...");
-      const result = await simulateDrop({
-        elderlyId, guardianId, deviceId,
-        latitude: 1.2966, longitude: 103.8502,
-        address: "Tanjong Pagar, Singapore"
-      });
-      setLastResponse(result);
-      setLastAlertTime(new Date().toISOString());
-      setStatus("Simulated drop sent");
-    } catch (error) {
-      setErrorMessage(error.message || "Failed to simulate drop.");
-      setStatus(isMonitoring ? "Monitoring Active" : "Monitoring Paused");
-    }
-  }
-
-  const tone = getStateTone({ isMonitoring, isSending, lastResponse, errorMessage });
-  const sortedMeds = [...meds].sort((a, b) => {
-    const ta = a.ReminderTime || "99:99", tb = b.ReminderTime || "99:99";
-    return ta.localeCompare(tb);
-  });
+  const sortedMeds = [...meds].sort((a, b) => (a.ReminderTime || "").localeCompare(b.ReminderTime || ""));
+  const h = new Date().getHours();
+  const greeting = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+  const isAlert = lastResponse?.detected;
 
   return (
-    <div className="phone-app">
-      <div className="phone-shell">
-        <div className="phone-topbar">
-          <div className="phone-brand">
-            <div className="phone-mark">&#x1F6E1;&#xFE0F;</div>
-            <div>
-              <div className="phone-title">Elderall Safety Phone</div>
-              <div className="phone-subtitle">Fall monitoring</div>
-            </div>
-          </div>
-          <div className="state-chip">
-            <span className={`state-dot ${tone.dot}`} />
-            {tone.chip}
-          </div>
+    <div className="ea-app">
+      {/* Status bar */}
+      <div className={`ea-status-bar ${isMonitoring ? "ea-status-bar--on" : ""} ${isAlert ? "ea-status-bar--alert" : ""}`}>
+        <div className="ea-status-dot" />
+        <span>{isAlert ? "Alert sent to guardian" : isMonitoring ? "Fall protection active" : isSending ? "Checking..." : "Protection paused"}</span>
+        <span className="ea-clock">{clock}</span>
+      </div>
+
+      {/* Header */}
+      <div className="ea-header">
+        <div className="ea-greeting">{greeting}</div>
+        <div className="ea-greeting-sub">Here is your schedule for today</div>
+      </div>
+
+      {/* Medicine list */}
+      <div className="ea-meds-section">
+        <div className="ea-section-title">
+          <span className="ea-pill-icon">
+            <svg className="ea-pill-svg" viewBox="0 0 32 32" width="28" height="28">
+              <rect x="4" y="10" width="24" height="12" rx="6" fill="#227A54" className="ea-pill-body"/>
+              <rect x="16" y="10" width="12" height="12" rx="6" fill="#1A5C40"/>
+              <ellipse cx="10" cy="16" rx="2" ry="1.5" fill="rgba(255,255,255,.35)"/>
+            </svg>
+          </span>
+          Today's Medicines
         </div>
 
-        {/* Medicine list for today */}
-        <div className="phone-meds">
-          <div className="phone-meds-header">
-            <span className="phone-meds-icon">&#x1F48A;</span>
-            <span className="phone-meds-title">Today's Medicines</span>
+        {medsLoading ? (
+          <div className="ea-meds-loading">Loading...</div>
+        ) : sortedMeds.length === 0 ? (
+          <div className="ea-meds-empty">
+            <div className="ea-meds-empty-icon">&#x2705;</div>
+            <div>No medicines scheduled today</div>
           </div>
-          {medsLoading ? (
-            <div className="phone-meds-loading">Loading medicines...</div>
-          ) : sortedMeds.length === 0 ? (
-            <div className="phone-meds-empty">No medicines scheduled for today.</div>
-          ) : (
-            <div className="phone-meds-list">
-              {sortedMeds.map((med) => {
-                const dose = Number(med.Dose) || 1;
-                const stock = med.Stock == null ? 0 : Number(med.Stock);
-                return (
-                  <div key={`${med.Name}-${med.ReminderTime}`} className="phone-med-item">
-                    <div className="phone-med-info">
-                      <div className="phone-med-name">{med.Name}</div>
-                      <div className="phone-med-detail">
-                        {formatMedTime(med.ReminderTime)} &middot; {dose} dose{dose > 1 ? "s" : ""}
-                        {stock === 0 && <span className="phone-med-warn"> &middot; Out of stock</span>}
-                        {stock > 0 && stock <= 5 && <span className="phone-med-low"> &middot; {stock} left</span>}
-                      </div>
-                      {med.Instructions && (
-                        <div className="phone-med-instr">{med.Instructions}</div>
-                      )}
-                    </div>
+        ) : (
+          <div className="ea-med-list">
+            {sortedMeds.map((med) => {
+              const dose = Number(med.Dose) || 1;
+              const stock = Number(med.Stock) || 0;
+              return (
+                <div key={`${med.Name}-${med.ReminderTime}`} className="ea-med-card">
+                  <div className="ea-med-time-col">
+                    <div className="ea-med-time">{fmtTime(med.ReminderTime)}</div>
+                    <div className="ea-med-dose">{dose} dose{dose > 1 ? "s" : ""}</div>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Compact monitoring status */}
-        <div className="phone-state phone-state--compact">
-          <div className="phone-compact-row">
-            <div>
-              <div className="phone-kicker">Status</div>
-              <div className="phone-compact-title">{tone.title}</div>
-              <div className="phone-compact-copy">{tone.copy}</div>
-            </div>
-            <div className="phone-compact-stats">
-              <div className="phone-compact-stat">
-                <span className="phone-compact-stat-label">Monitoring</span>
-                <span className={`phone-compact-stat-value ${isMonitoring ? "phone-stat-value--on" : "phone-stat-value--off"}`}>{isMonitoring ? "On" : "Off"}</span>
-              </div>
-              <div className="phone-compact-stat">
-                <span className="phone-compact-stat-label">Last alert</span>
-                <span className="phone-compact-stat-value">{lastAlertTime ? new Date(lastAlertTime).toLocaleTimeString() : "None"}</span>
-              </div>
-            </div>
+                  <div className="ea-med-info">
+                    <div className="ea-med-name">{med.Name}</div>
+                    {med.Instructions && <div className="ea-med-instr">{med.Instructions}</div>}
+                    {stock === 0 && <div className="ea-med-warn">Out of stock — tell your guardian</div>}
+                    {stock > 0 && stock <= 5 && <div className="ea-med-low">Only {stock} left</div>}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          {errorMessage ? <div className="phone-error phone-error--compact">{errorMessage}</div> : null}
-        </div>
+        )}
+      </div>
 
-        <div className="phone-actions">
+      {/* Monitoring + actions */}
+      <div className="ea-monitor-section">
+        <div className="ea-monitor-bar">
+          <div className={`ea-monitor-indicator ${isMonitoring ? "ea-monitor--on" : "ea-monitor--off"}`}>
+            <div className="ea-monitor-dot" />
+            <span>{isMonitoring ? "Protected" : "Paused"}</span>
+          </div>
           {!isMonitoring ? (
-            <button className="phone-button phone-button--primary" onClick={handleEnableMonitoring}>
-              <span className="phone-button-title">Enable Monitoring</span>
-              <span className="phone-button-caption">Start protection</span>
-            </button>
+            <button className="ea-btn ea-btn--enable" onClick={handleEnable}>Enable Protection</button>
           ) : (
-            <button className="phone-button phone-button--danger" onClick={handlePauseMonitoring}>
-              <span className="phone-button-title">Pause Monitoring</span>
-              <span className="phone-button-caption">Stop protection</span>
-            </button>
+            <button className="ea-btn ea-btn--pause" onClick={handlePause}>Pause</button>
           )}
-
-          <button className="phone-button phone-button--ghost" onClick={handleSimulateDrop}>
-            <span className="phone-button-title">Simulate Drop</span>
-            <span className="phone-button-caption">Send test alert</span>
-          </button>
         </div>
+        {errorMessage && <div className="ea-error">{errorMessage}</div>}
+      </div>
 
-        <div className="phone-reminder">
-          <div className="phone-reminder-title">Keep this app open</div>
-          <div className="phone-reminder-copy">
-            Do not swipe it away. For best protection, keep this screen open when possible.
-          </div>
-        </div>
+      {/* Emergency call */}
+      <button className="ea-emergency" onClick={() => alert("Calling guardian...\n(Simulated)")}>
+        <span className="ea-emergency-icon">&#x1F4DE;</span>
+        <span>Call My Guardian</span>
+      </button>
+
+      {/* Simulate drop — small, bottom */}
+      <button className="ea-simulate" onClick={handleSimulate}>
+        Simulate Drop (Test)
+      </button>
+
+      {/* Keep open reminder */}
+      <div className="ea-keep-open">
+        Keep this app open for fall protection
       </div>
     </div>
   );

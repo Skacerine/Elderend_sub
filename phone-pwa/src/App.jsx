@@ -4,7 +4,7 @@ import { sendMotionSample, simulateDrop } from "./api";
 
 const STORAGE_KEY = "elderall_monitoring_enabled";
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://elderend-backend.onrender.com";
-const ELDERLY_ID = 111;
+const ELDERLY_ID = 1;
 
 function fmtTime(t) {
   if (!t) return "-";

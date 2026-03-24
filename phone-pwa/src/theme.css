@@ -1,25 +1,25 @@
 :root {
-  --cream: #F7F5F0;
-  --white: #FFFFFF;
-  --green: #227A54;
-  --green-dark: #1A5C40;
-  --green-soft: #D6EDE4;
-  --green-pale: #EDF7F2;
-  --red: #C0392B;
-  --red-soft: #FFF5F4;
-  --amber: #B8860B;
-  --amber-soft: #FFFAEA;
-  --text-1: #1A1A1A;
-  --text-2: #3D3D3D;
-  --text-3: #6B6B6B;
-  --text-4: #9A9A9A;
-  --border: #E4E0D8;
+  --cream: oklch(97% 0.008 75);
+  --white: oklch(99.2% 0.003 75);
+  --green: oklch(42% 0.1 160);
+  --green-dark: oklch(35% 0.09 160);
+  --green-soft: oklch(90% 0.04 160);
+  --green-pale: oklch(95% 0.03 160);
+  --red: oklch(50% 0.16 27);
+  --red-soft: oklch(94% 0.03 25);
+  --amber: oklch(55% 0.12 75);
+  --amber-soft: oklch(95% 0.04 80);
+  --text-1: oklch(20% 0.015 55);
+  --text-2: oklch(30% 0.015 55);
+  --text-3: oklch(44% 0.012 55);
+  --text-4: oklch(60% 0.01 55);
+  --border: oklch(89% 0.012 75);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 18px; -webkit-text-size-adjust: 100%; }
 body {
-  font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: var(--cream);
   color: var(--text-1);
   min-height: 100vh;
@@ -45,7 +45,7 @@ button { font: inherit; }
   gap: 8px;
   padding: 12px 20px;
   background: var(--amber-soft);
-  border-bottom: 1.5px solid #F0DFA0;
+  border-bottom: 1.5px solid oklch(88% 0.06 80);
   color: var(--amber);
   font-size: 0.82rem;
   font-weight: 700;
@@ -57,13 +57,13 @@ button { font: inherit; }
 }
 .ea-status-bar--alert {
   background: var(--red-soft);
-  border-color: #F5C6C2;
+  border-color: oklch(85% 0.05 25);
   color: var(--red);
   animation: ea-pulse-bg 1.5s ease infinite;
 }
 @keyframes ea-pulse-bg {
   0%, 100% { background: var(--red-soft); }
-  50% { background: #FAE5E3; }
+  50% { background: oklch(91% 0.04 25); }
 }
 .ea-status-dot {
   width: 8px; height: 8px; border-radius: 50%;
@@ -127,8 +127,8 @@ button { font: inherit; }
   75% { transform: translateY(-2px) rotate(3deg); }
 }
 @keyframes ea-pill-color {
-  0%, 100% { fill: #227A54; }
-  50% { fill: #2E9469; }
+  0%, 100% { fill: oklch(42% 0.1 160); }
+  50% { fill: oklch(48% 0.12 160); }
 }
 
 .ea-meds-loading, .ea-meds-empty {
@@ -150,7 +150,7 @@ button { font: inherit; }
   border: 1.5px solid var(--border);
   border-radius: 20px;
   padding: 18px;
-  box-shadow: 0 2px 8px rgba(0,0,0,.04);
+  box-shadow: 0 1px 4px oklch(20% 0.01 55 / 0.05);
   transition: border-color 0.15s;
   animation: ea-fade-up 0.35s ease both;
 }
@@ -267,7 +267,7 @@ button { font: inherit; }
 .ea-btn--enable {
   background: var(--green);
   color: white;
-  box-shadow: 0 3px 12px rgba(34,122,84,.25);
+  box-shadow: 0 3px 12px oklch(42% 0.1 160 / 0.2);
 }
 .ea-btn--enable:hover { background: var(--green-dark); }
 .ea-btn--enable:active { transform: scale(0.96); }
@@ -283,7 +283,7 @@ button { font: inherit; }
   padding: 10px 14px;
   border-radius: 12px;
   background: var(--red-soft);
-  border: 1px solid #F5C6C2;
+  border: 1px solid oklch(85% 0.05 25);
   color: var(--red);
   font-size: 0.85rem;
   font-weight: 600;
@@ -304,16 +304,16 @@ button { font: inherit; }
   align-items: center;
   justify-content: center;
   gap: 12px;
-  box-shadow: 0 6px 24px rgba(192,57,43,.3);
+  box-shadow: 0 6px 24px oklch(50% 0.16 27 / 0.25);
   transition: all 0.15s;
 }
-.ea-emergency:hover { background: #A93226; }
+.ea-emergency:hover { background: oklch(44% 0.16 27); }
 .ea-emergency:active { transform: scale(0.97); }
 .ea-emergency:disabled { opacity: 0.7; cursor: default; transform: none; }
 .ea-emergency--sending { animation: ea-pulse-btn 1s ease infinite; }
 @keyframes ea-pulse-btn {
-  0%, 100% { box-shadow: 0 6px 24px rgba(192,57,43,.3); }
-  50% { box-shadow: 0 6px 32px rgba(192,57,43,.5); }
+  0%, 100% { box-shadow: 0 6px 24px oklch(50% 0.16 27 /.3); }
+  50% { box-shadow: 0 6px 32px oklch(50% 0.16 27 /.5); }
 }
 .ea-emergency-icon { font-size: 1.6rem; }
 
@@ -322,7 +322,7 @@ button { font: inherit; }
   margin: 12px 20px 20px;
   padding: 14px;
   background: var(--amber-soft);
-  border: 1.5px solid #F0DFA0;
+  border: 1.5px solid oklch(88% 0.06 80);
   border-radius: 14px;
   color: var(--amber);
   font-size: 0.85rem;
@@ -336,4 +336,22 @@ button { font: inherit; }
   .ea-greeting { font-size: 1.7rem; }
   .ea-med-name { font-size: 1.1rem; }
   .ea-emergency { font-size: 1.15rem; padding: 18px; }
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Focus visible ── */
+button:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+button:focus:not(:focus-visible) {
+  outline: none;
 }

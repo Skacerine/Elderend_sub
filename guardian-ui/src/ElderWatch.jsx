@@ -67,17 +67,17 @@ export default function ElderWatch() {
     L.control.zoom({ position: "bottomright" }).addTo(map);
 
     const homeIcon = L.divIcon({
-      html: `<div style="background:#0e1520;border:2px solid #3b82f6;border-radius:6px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;box-shadow:0 2px 10px rgba(59,130,246,.5)">&#x1f475;</div>`,
+      html: `<div style="background:#fff;border:2px solid #2d7a50;border-radius:8px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 2px 8px rgba(45,122,80,.25)">&#x1f475;</div>`,
       iconSize: [24, 24], iconAnchor: [12, 12], className: ""
     });
     L.marker([HOME.lat, HOME.lng], { icon: homeIcon }).addTo(map).bindPopup("<b>Home Base</b><br>Boundary: 500m");
     L.circle([HOME.lat, HOME.lng], {
-      radius: 500, color: "#3b82f6", fillColor: "#3b82f6",
-      fillOpacity: 0.05, weight: 1.5, dashArray: "6 4"
+      radius: 500, color: "#2d7a50", fillColor: "#2d7a50",
+      fillOpacity: 0.06, weight: 1.5, dashArray: "6 4"
     }).addTo(map);
 
     const elIcon = L.divIcon({
-      html: `<div style="background:#f87171;border:3px solid #fff;border-radius:50%;width:18px;height:18px;box-shadow:0 0 0 3px rgba(248,113,113,.3),0 2px 8px rgba(0,0,0,.5)"></div>`,
+      html: `<div style="background:#d45a5a;border:3px solid #fff;border-radius:50%;width:18px;height:18px;box-shadow:0 0 0 3px rgba(212,90,90,.25),0 2px 6px rgba(0,0,0,.15)"></div>`,
       iconSize: [18, 18], iconAnchor: [9, 9], className: ""
     });
     const marker = L.marker([HOME.lat, HOME.lng], { icon: elIcon, draggable: true, title: "Mdm Tan Ah Kow" });
@@ -337,15 +337,15 @@ export default function ElderWatch() {
           <div ref={mapRef} className="ew-map" />
           <div className="ew-map-badge">
             <div style={{ fontSize: "0.65rem", color: "var(--muted-2)", marginBottom: 3 }}>LIVE MAP</div>
-            <div><span style={{ color: "#3b82f6" }}>&#9679;</span> Home boundary (500m)</div>
-            <div><span style={{ color: "#f87171" }}>&#9679;</span> Elderly — drag to move</div>
+            <div><span style={{ color: "#2d7a50" }}>&#9679;</span> Home boundary (500m)</div>
+            <div><span style={{ color: "#d45a5a" }}>&#9679;</span> Elderly — drag to move</div>
           </div>
         </div>
 
         {/* Right sidebar */}
         <div className="ew-right">
           {/* Status */}
-          <div className="ew-card" style={{ borderColor: statusData ? (isHome ? "rgba(34,211,165,.3)" : "rgba(248,113,113,.3)") : undefined }}>
+          <div className="ew-card" style={{ borderColor: statusData ? (isHome ? "rgba(45,122,80,.3)" : "rgba(212,90,90,.3)") : undefined }}>
             <div className="ew-card-label">TRACKING TARGET</div>
             <div style={{ fontWeight: 700, fontFamily: "var(--font-mono)", fontSize: "0.85rem" }}>{ELDERLY_ID}</div>
             <div className={`ew-badge ${isHome ? "ew-badge--green" : statusData ? "ew-badge--red" : "ew-badge--blue"}`} style={{ marginTop: 6 }}>
@@ -422,7 +422,7 @@ export default function ElderWatch() {
             amqpLog.length === 0 ? (
               <div className="ew-empty">No AMQP events yet.</div>
             ) : amqpLog.map((n, i) => (
-              <div key={n._id || i} style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", padding: "3px 0", borderBottom: "1px solid rgba(27,45,71,.3)", color: "var(--muted)" }}>
+              <div key={n._id || i} style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", padding: "3px 0", borderBottom: "1px solid var(--border)", color: "var(--muted)" }}>
                 <span style={{ color: "var(--muted-2)" }}>[{fmtTime(n.sentAt)}]</span>
                 <span style={{ color: "var(--cyan)", fontWeight: 700 }}> PUBLISH: {n.routingKey} </span>
                 <span>{n.payload?.elderlyId} | {n.payload?.status} | dist:{n.payload?.distance}m</span>

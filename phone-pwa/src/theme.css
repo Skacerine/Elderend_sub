@@ -1,635 +1,349 @@
 :root {
-  --bg: #07111f;
-  --bg-2: #0b1728;
-  --panel: rgba(10, 20, 36, 0.92);
-  --panel-soft: rgba(14, 28, 48, 0.74);
-  --border: rgba(72, 115, 168, 0.26);
-  --border-strong: rgba(79, 217, 255, 0.36);
-  --text: #eaf2ff;
-  --muted: #8ea7c7;
-  --muted-2: #6f89ab;
-  --cyan: #4fd9ff;
-  --green: #42e79c;
-  --yellow: #ffc857;
-  --red: #ff6b7d;
-  --shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
-  --glow: 0 0 0 1px rgba(79, 217, 255, 0.16), 0 0 24px rgba(79, 217, 255, 0.12);
-  --radius-lg: 24px;
-  --radius-md: 18px;
-  --radius-sm: 14px;
-  --font-ui: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  --cream: #F7F5F0;
+  --white: #FFFFFF;
+  --green: #227A54;
+  --green-dark: #1A5C40;
+  --green-soft: #D6EDE4;
+  --green-pale: #EDF7F2;
+  --red: #C0392B;
+  --red-soft: #FFF5F4;
+  --amber: #B8860B;
+  --amber-soft: #FFFAEA;
+  --text-1: #1A1A1A;
+  --text-2: #3D3D3D;
+  --text-3: #6B6B6B;
+  --text-4: #9A9A9A;
+  --border: #E4E0D8;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html,
-body,
-#root {
-  min-height: 100%;
-  margin: 0;
-}
-
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 18px; -webkit-text-size-adjust: 100%; }
 body {
-  font-family: var(--font-ui);
-  background:
-    radial-gradient(circle at top center, rgba(79, 217, 255, 0.12), transparent 24%),
-    linear-gradient(180deg, #050d18 0%, #081220 45%, #08111d 100%);
-  color: var(--text);
+  font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--cream);
+  color: var(--text-1);
+  min-height: 100vh;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
+button { font: inherit; }
 
-button {
-  font: inherit;
-}
-
-.phone-app {
+/* ── App shell ── */
+.ea-app {
+  max-width: 480px;
+  margin: 0 auto;
   min-height: 100vh;
   min-height: 100dvh;
-  padding: 18px;
-  padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
-}
-
-.phone-shell {
-  max-width: 520px;
-  margin: 0 auto;
-  display: grid;
-  gap: 16px;
-}
-
-.phone-topbar,
-.phone-panel,
-.phone-state,
-.phone-actions,
-.phone-debug,
-.phone-reminder {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.phone-topbar {
-  padding: 18px;
+  padding: 0 0 env(safe-area-inset-bottom, 20px);
   display: flex;
-  justify-content: space-between;
-  gap: 14px;
-  align-items: center;
+  flex-direction: column;
 }
 
-.phone-brand {
+/* ── Status bar ── */
+.ea-status-bar {
   display: flex;
-  gap: 14px;
-  align-items: center;
-}
-
-.phone-mark {
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(135deg, rgba(90, 140, 255, 0.32), rgba(79, 217, 255, 0.22));
-  border: 1px solid rgba(79, 217, 255, 0.28);
-  box-shadow: var(--glow);
-  font-size: 24px;
-  color: var(--cyan);
-  flex-shrink: 0;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.phone-mark:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 0 1px rgba(79, 217, 255, 0.24), 0 0 32px rgba(79, 217, 255, 0.18);
-}
-
-.phone-title {
-  font-size: 1.16rem;
-  font-weight: 800;
-}
-
-.phone-subtitle {
-  color: var(--muted);
-  margin-top: 4px;
-  font-size: 0.92rem;
-  line-height: 1.4;
-}
-
-.state-chip {
-  border-radius: 999px;
-  padding: 12px 16px;
-  min-height: 44px;
-  display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.9rem;
-  font-weight: 700;
-  border: 1px solid var(--border);
-  background: rgba(10, 21, 39, 0.82);
-  white-space: nowrap;
-}
-
-.state-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  flex-shrink: 0;
-  transition: background 0.3s ease, box-shadow 0.3s ease;
-}
-
-.state-dot--green {
-  background: var(--green);
-  box-shadow: 0 0 12px var(--green);
-  animation: pulse-green 2s ease-in-out infinite;
-}
-
-.state-dot--yellow {
-  background: var(--yellow);
-  box-shadow: 0 0 12px var(--yellow);
-  animation: pulse-yellow 1.5s ease-in-out infinite;
-}
-
-.state-dot--red {
-  background: var(--red);
-  box-shadow: 0 0 12px var(--red);
-  animation: pulse-red 1s ease-in-out infinite;
-}
-
-@keyframes pulse-green {
-  0%, 100% { box-shadow: 0 0 8px var(--green); }
-  50% { box-shadow: 0 0 18px var(--green), 0 0 28px rgba(66, 231, 156, 0.3); }
-}
-
-@keyframes pulse-yellow {
-  0%, 100% { box-shadow: 0 0 8px var(--yellow); }
-  50% { box-shadow: 0 0 18px var(--yellow), 0 0 28px rgba(255, 200, 87, 0.3); }
-}
-
-@keyframes pulse-red {
-  0%, 100% { box-shadow: 0 0 8px var(--red); }
-  50% { box-shadow: 0 0 20px var(--red), 0 0 32px rgba(255, 107, 125, 0.35); }
-}
-
-.phone-state {
-  padding: 24px 20px;
-  position: relative;
-  overflow: hidden;
-}
-
-.phone-state::after {
-  content: "";
-  position: absolute;
-  inset: auto -20% -30% auto;
-  width: 240px;
-  height: 240px;
-  background: radial-gradient(circle, rgba(79, 217, 255, 0.12), transparent 60%);
-  pointer-events: none;
-}
-
-.phone-kicker {
-  color: var(--muted);
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-}
-
-.phone-main-state {
-  margin-top: 14px;
-  font-size: clamp(2.2rem, 7vw, 3rem);
-  font-weight: 900;
-  line-height: 1.08;
-  background: linear-gradient(135deg, var(--text) 0%, var(--cyan) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.phone-copy {
-  margin-top: 12px;
-  color: var(--muted);
-  line-height: 1.55;
-  font-size: 1.06rem;
-  max-width: 34ch;
-}
-
-.phone-grid {
-  margin-top: 22px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.phone-stat {
-  background: var(--panel-soft);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 16px;
-  transition: border-color 0.25s ease, transform 0.25s ease;
-}
-
-.phone-stat:hover {
-  border-color: var(--border-strong);
-  transform: translateY(-2px);
-}
-
-.phone-stat-label {
-  color: var(--muted);
-  font-size: 0.74rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.phone-stat-value {
-  margin-top: 10px;
-  font-size: 1.18rem;
-  font-weight: 800;
-  line-height: 1.3;
-  transition: color 0.3s ease;
-}
-
-.phone-stat-value--on {
-  color: var(--green);
-}
-
-.phone-stat-value--off {
-  color: var(--muted-2);
-}
-
-.phone-stat-value--busy {
-  color: var(--yellow);
-}
-
-.phone-actions {
-  padding: 18px;
-  display: grid;
-  gap: 12px;
-}
-
-.phone-button {
-  width: 100%;
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  min-height: 76px;
-  padding: 18px 20px;
-  cursor: pointer;
-  color: var(--text);
-  background: linear-gradient(180deg, rgba(17, 31, 54, 0.96), rgba(10, 18, 33, 0.96));
-  font-weight: 800;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, filter 0.2s ease;
-  text-align: left;
-  position: relative;
-  overflow: hidden;
-}
-
-.phone-button::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  opacity: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.08), transparent);
-  transition: opacity 0.2s ease;
-}
-
-.phone-button:hover::after {
-  opacity: 1;
-}
-
-.phone-button:active {
-  transform: scale(0.97);
-}
-
-.phone-button--primary {
-  background: linear-gradient(135deg, rgba(49, 97, 255, 0.95), rgba(54, 188, 255, 0.92));
-  border-color: rgba(79, 217, 255, 0.32);
-  box-shadow: var(--glow);
-}
-
-.phone-button--primary:hover {
-  box-shadow: 0 0 0 1px rgba(79, 217, 255, 0.3), 0 0 32px rgba(79, 217, 255, 0.2), 0 8px 24px rgba(49, 97, 255, 0.25);
-}
-
-.phone-button--danger {
-  background: linear-gradient(135deg, rgba(102, 22, 38, 0.96), rgba(176, 28, 56, 0.92));
-  border-color: rgba(255, 107, 125, 0.34);
-}
-
-.phone-button--danger:hover {
-  box-shadow: 0 0 0 1px rgba(255, 107, 125, 0.3), 0 0 28px rgba(255, 107, 125, 0.18);
-}
-
-.phone-button--ghost {
-  background: rgba(12, 20, 36, 0.86);
-}
-
-.phone-button--ghost:hover {
-  border-color: var(--border-strong);
-  box-shadow: 0 0 20px rgba(79, 217, 255, 0.08);
-}
-
-.phone-button-title {
-  display: block;
-  font-size: 1.12rem;
-  line-height: 1.2;
-}
-
-.phone-button-caption {
-  display: block;
-  font-size: 0.94rem;
-  color: rgba(255, 255, 255, 0.84);
-  margin-top: 6px;
-  font-weight: 500;
-  line-height: 1.35;
-}
-
-.phone-panel {
-  padding: 18px;
-}
-
-.phone-section-title {
-  font-size: 0.76rem;
-  letter-spacing: 0.18em;
-  color: var(--muted);
-  text-transform: uppercase;
-}
-
-.phone-panel-title {
-  margin-top: 10px;
-  font-size: 1.05rem;
-  font-weight: 800;
-}
-
-.phone-panel-copy {
-  margin-top: 10px;
-  color: var(--muted);
-  line-height: 1.65;
-  font-size: 0.94rem;
-}
-
-.phone-reminder {
-  padding: 18px;
-  border-radius: var(--radius-lg);
-  background: rgba(56, 42, 8, 0.68);
-  border: 1px solid rgba(255, 200, 87, 0.28);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
-}
-
-.phone-reminder-title {
-  font-size: 1rem;
-  font-weight: 800;
-  color: #ffe08a;
-}
-
-.phone-reminder-copy {
-  margin-top: 8px;
-  color: #fff2c7;
-  font-size: 0.98rem;
-  line-height: 1.5;
-}
-
-.phone-debug {
-  padding: 18px;
-}
-
-.debug-block {
-  margin: 14px 0 0;
-  padding: 14px;
-  border-radius: 16px;
-  background: rgba(2, 9, 20, 0.88);
-  border: 1px solid rgba(79, 217, 255, 0.16);
-  color: #c7e8ff;
-  font-family: var(--font-mono);
+  padding: 12px 20px;
+  background: var(--amber-soft);
+  border-bottom: 1.5px solid #F0DFA0;
+  color: var(--amber);
   font-size: 0.82rem;
-  line-height: 1.6;
-  overflow-x: auto;
-  white-space: pre-wrap;
+  font-weight: 700;
+}
+.ea-status-bar--on {
+  background: var(--green-pale);
+  border-color: var(--green-soft);
+  color: var(--green-dark);
+}
+.ea-status-bar--alert {
+  background: var(--red-soft);
+  border-color: #F5C6C2;
+  color: var(--red);
+  animation: ea-pulse-bg 1.5s ease infinite;
+}
+@keyframes ea-pulse-bg {
+  0%, 100% { background: var(--red-soft); }
+  50% { background: #FAE5E3; }
+}
+.ea-status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: currentColor; flex-shrink: 0;
+  animation: ea-breathe 2.5s ease-in-out infinite;
+}
+@keyframes ea-breathe {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.3); }
+}
+.ea-clock { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--text-4); }
+
+/* ── Header / greeting ── */
+.ea-header {
+  padding: 28px 24px 8px;
+}
+.ea-greeting {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-1);
+  line-height: 1.15;
+}
+.ea-greeting-sub {
+  font-size: 1rem;
+  color: var(--text-3);
+  font-weight: 500;
+  margin-top: 4px;
 }
 
-.phone-error {
-  margin-top: 12px;
-  padding: 14px;
-  border-radius: 16px;
-  background: rgba(65, 15, 27, 0.9);
-  border: 1px solid rgba(255, 107, 125, 0.34);
-  color: #ffd7dd;
-  font-size: 0.96rem;
-  line-height: 1.45;
-  animation: fade-in 0.3s ease;
+/* ── Medicine section ── */
+.ea-meds-section {
+  padding: 12px 20px 0;
+  flex: 1;
 }
-
-/* Fade-in for panels */
-.phone-shell > * {
-  animation: slide-up 0.4s ease both;
-}
-.phone-shell > *:nth-child(1) { animation-delay: 0s; }
-.phone-shell > *:nth-child(2) { animation-delay: 0.06s; }
-.phone-shell > *:nth-child(3) { animation-delay: 0.12s; }
-.phone-shell > *:nth-child(4) { animation-delay: 0.18s; }
-.phone-shell > *:nth-child(5) { animation-delay: 0.24s; }
-
-@keyframes slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-/* ── Medicine list on phone ── */
-.phone-meds {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  padding: 18px;
-  overflow: hidden;
-}
-
-.phone-meds-header {
+.ea-section-title {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.phone-meds-icon {
-  font-size: 1.4rem;
-}
-
-.phone-meds-title {
-  font-size: 1.05rem;
+  gap: 8px;
+  font-size: 0.78rem;
   font-weight: 800;
+  color: var(--text-4);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
 }
 
-.phone-meds-loading,
-.phone-meds-empty {
-  color: var(--muted);
-  font-size: 0.9rem;
+/* ── Animated pill icon ── */
+.ea-pill-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  animation: ea-pill-bob 3s ease-in-out infinite;
+}
+.ea-pill-svg { display: block; }
+.ea-pill-body { animation: ea-pill-color 4s ease-in-out infinite; }
+
+@keyframes ea-pill-bob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-3px) rotate(-5deg); }
+  50% { transform: translateY(0) rotate(0deg); }
+  75% { transform: translateY(-2px) rotate(3deg); }
+}
+@keyframes ea-pill-color {
+  0%, 100% { fill: #227A54; }
+  50% { fill: #2E9469; }
+}
+
+.ea-meds-loading, .ea-meds-empty {
   text-align: center;
-  padding: 12px 0;
-}
-
-.phone-meds-list {
-  display: grid;
-  gap: 10px;
-}
-
-.phone-med-item {
-  background: var(--panel-soft);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 14px 16px;
-  transition: border-color 0.2s;
-}
-
-.phone-med-item:hover {
-  border-color: var(--border-strong);
-}
-
-.phone-med-name {
-  font-size: 1.1rem;
-  font-weight: 800;
-  line-height: 1.2;
-}
-
-.phone-med-detail {
-  margin-top: 4px;
-  font-size: 0.88rem;
-  color: var(--muted);
+  color: var(--text-3);
+  font-size: 1rem;
+  padding: 32px 16px;
   font-weight: 500;
 }
+.ea-meds-empty-icon { font-size: 2.5rem; margin-bottom: 8px; }
 
-.phone-med-warn {
-  color: var(--red);
-  font-weight: 700;
-}
+/* ── Medicine cards ── */
+.ea-med-list { display: flex; flex-direction: column; gap: 10px; }
 
-.phone-med-low {
-  color: var(--yellow);
-  font-weight: 700;
-}
-
-.phone-med-instr {
-  margin-top: 8px;
-  font-size: 0.84rem;
-  color: var(--muted-2);
-  line-height: 1.5;
-}
-
-/* ── Compact monitoring status ── */
-.phone-state--compact {
-  padding: 16px 18px;
-}
-
-.phone-state--compact .phone-kicker {
-  font-size: 0.7rem;
-}
-
-.phone-compact-row {
+.ea-med-card {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
   gap: 14px;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 18px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.04);
+  transition: border-color 0.15s;
+  animation: ea-fade-up 0.35s ease both;
+}
+.ea-med-card:nth-child(1) { animation-delay: 0s; }
+.ea-med-card:nth-child(2) { animation-delay: 0.06s; }
+.ea-med-card:nth-child(3) { animation-delay: 0.08s; }
+.ea-med-card:nth-child(4) { animation-delay: 0.1s; }
+
+@keyframes ea-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
 }
 
-.phone-compact-title {
-  font-size: 1.3rem;
-  font-weight: 900;
-  line-height: 1.2;
-  margin-top: 6px;
-  background: linear-gradient(135deg, var(--text) 0%, var(--cyan) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.phone-compact-copy {
-  margin-top: 4px;
-  color: var(--muted);
-  font-size: 0.88rem;
-}
-
-.phone-compact-stats {
+.ea-med-time-col {
+  min-width: 72px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  background: var(--green-pale);
+  border: 1px solid var(--green-soft);
+  border-radius: 14px;
+  padding: 10px 6px;
 }
-
-.phone-compact-stat {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+.ea-med-time {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--green-dark);
 }
-
-.phone-compact-stat-label {
-  font-size: 0.65rem;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-
-.phone-compact-stat-value {
-  font-size: 0.85rem;
+.ea-med-dose {
+  font-size: 0.68rem;
   font-weight: 700;
+  color: var(--green);
   margin-top: 2px;
 }
 
-.phone-error--compact {
-  margin-top: 10px;
-  padding: 10px;
-  font-size: 0.85rem;
+.ea-med-info { flex: 1; min-width: 0; }
+.ea-med-name {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-1);
+  line-height: 1.2;
+}
+.ea-med-instr {
+  margin-top: 6px;
+  font-size: 0.88rem;
+  color: var(--text-3);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.ea-med-warn {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--red);
+  background: var(--red-soft);
+  padding: 4px 10px;
+  border-radius: 8px;
+  display: inline-block;
+}
+.ea-med-low {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--amber);
+  background: var(--amber-soft);
+  padding: 4px 10px;
+  border-radius: 8px;
+  display: inline-block;
 }
 
-@media (max-width: 560px) {
-  .phone-app {
-    padding: 14px;
-  }
+/* ── Monitoring bar ── */
+.ea-monitor-section { padding: 16px 20px 0; }
+.ea-monitor-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 14px 16px;
+}
+.ea-monitor-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.ea-monitor--on { color: var(--green-dark); }
+.ea-monitor--off { color: var(--text-4); }
+.ea-monitor-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: currentColor;
+}
+.ea-monitor--on .ea-monitor-dot {
+  animation: ea-breathe 2s ease-in-out infinite;
+  box-shadow: 0 0 8px var(--green);
+}
 
-  .phone-topbar {
-    align-items: flex-start;
-    flex-direction: column;
-  }
+.ea-btn {
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ea-btn--enable {
+  background: var(--green);
+  color: white;
+  box-shadow: 0 3px 12px rgba(34,122,84,.25);
+}
+.ea-btn--enable:hover { background: var(--green-dark); }
+.ea-btn--enable:active { transform: scale(0.96); }
+.ea-btn--pause {
+  background: var(--cream);
+  color: var(--text-3);
+  border: 1.5px solid var(--border);
+}
+.ea-btn--pause:hover { border-color: var(--text-4); }
 
-  .phone-grid {
-    grid-template-columns: 1fr;
-  }
+.ea-error {
+  margin-top: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--red-soft);
+  border: 1px solid #F5C6C2;
+  color: var(--red);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
 
-  .state-chip {
-    width: 100%;
-    justify-content: center;
-  }
+/* ── Emergency call button ── */
+.ea-emergency {
+  margin: 16px 20px 0;
+  padding: 20px;
+  background: var(--red);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 1.3rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  box-shadow: 0 6px 24px rgba(192,57,43,.3);
+  transition: all 0.15s;
+}
+.ea-emergency:hover { background: #A93226; }
+.ea-emergency:active { transform: scale(0.97); }
+.ea-emergency-icon { font-size: 1.6rem; }
 
-  .phone-button {
-    min-height: 82px;
-  }
+/* ── Simulate button (small, subtle) ── */
+.ea-simulate {
+  margin: 12px 20px 0;
+  padding: 12px;
+  background: transparent;
+  color: var(--text-4);
+  border: 1.5px dashed var(--border);
+  border-radius: 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+}
+.ea-simulate:hover { border-color: var(--text-3); color: var(--text-3); }
 
-  .phone-compact-row {
-    flex-direction: column;
-  }
+/* ── Keep open reminder ── */
+.ea-keep-open {
+  margin: 12px 20px 20px;
+  padding: 14px;
+  background: var(--amber-soft);
+  border: 1.5px solid #F0DFA0;
+  border-radius: 14px;
+  color: var(--amber);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+}
 
-  .phone-compact-stats {
-    flex-direction: row;
-    gap: 16px;
-  }
-
-  .phone-compact-stat {
-    align-items: flex-start;
-  }
+/* ── Responsive ── */
+@media (max-width: 400px) {
+  html { font-size: 16px; }
+  .ea-greeting { font-size: 1.7rem; }
+  .ea-med-name { font-size: 1.1rem; }
+  .ea-emergency { font-size: 1.15rem; padding: 18px; }
 }

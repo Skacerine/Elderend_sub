@@ -45,6 +45,40 @@ router.get("/", async (_req, res) => {
   }
 });
 
+// POST /medicine/create — create new medicine in OutSystems
+router.post("/create", async (req, res) => {
+  try {
+    const response = await fetch(`${MEDICINE_BASE_URL}/medicine/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(req.body)
+    });
+    const text = await response.text();
+    try { res.status(response.status).json(JSON.parse(text)); }
+    catch { res.status(response.status).json({ result: text }); }
+  } catch (e) {
+    console.error("[Medicine] Create failed:", e.message);
+    res.status(503).json({ error: e.message });
+  }
+});
+
+// PUT /medicine/update — update medicine in OutSystems (e.g. restock)
+router.put("/update", async (req, res) => {
+  try {
+    const response = await fetch(`${MEDICINE_BASE_URL}/medicine/`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(req.body)
+    });
+    const text = await response.text();
+    try { res.status(response.status).json(JSON.parse(text)); }
+    catch { res.status(response.status).json({ result: text }); }
+  } catch (e) {
+    console.error("[Medicine] Update failed:", e.message);
+    res.status(503).json({ error: e.message });
+  }
+});
+
 // POST /medicine/notify — send medicine reminder SMS + email
 router.post("/notify", async (req, res) => {
   const { elderlyId, medicines } = req.body;

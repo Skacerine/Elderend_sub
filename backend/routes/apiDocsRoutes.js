@@ -40,9 +40,9 @@ const spec = {
         description: "Scores drop risk from device motion features. If score >= 100, creates incident, posts to OutSystems, sends SMS + email alerts.",
         requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["elderlyId", "deviceId", "features"],
           properties: {
-            elderlyId: { type: "integer", example: 1234567891234567 },
+            elderlyId: { type: "integer", example: 1 },
             deviceId: { type: "string", example: "PHONE_01" },
-            guardianId: { type: "integer", example: 1234567891234567 },
+            guardianId: { type: "integer", example: 1 },
             timestamp: { type: "string", format: "date-time" },
             latitude: { type: "number", example: 1.2966 },
             longitude: { type: "number", example: 103.8502 },
@@ -63,8 +63,8 @@ const spec = {
         tags: ["Motion"], summary: "Simulate a fall event",
         description: "Creates a fall incident with score 100, posts to OutSystems, sends SMS + email alerts. Used for testing.",
         requestBody: { content: { "application/json": { schema: { type: "object", properties: {
-          elderlyId: { type: "integer", example: 1234567891234567 },
-          guardianId: { type: "integer", example: 1234567891234567 },
+          elderlyId: { type: "integer", example: 1 },
+          guardianId: { type: "integer", example: 1 },
           deviceId: { type: "string", example: "PHONE_01" }
         } } } } },
         responses: { 200: { description: "Incident + OutSystems response" } }
@@ -187,7 +187,7 @@ const spec = {
     "/medicine/health": { get: { tags: ["Medicine"], summary: "Medicine proxy health", responses: { 200: { description: "OK" } } } },
     "/medicine/{elderlyId}": {
       get: { tags: ["Medicine"], summary: "Get medicines for elderly",
-        parameters: [{ name: "elderlyId", in: "path", required: true, schema: { type: "integer", example: 111 } }],
+        parameters: [{ name: "elderlyId", in: "path", required: true, schema: { type: "integer", example: 1 } }],
         responses: { 200: { description: "Array of medicines from OutSystems" } } }
     },
     "/medicine": {
@@ -198,7 +198,7 @@ const spec = {
         requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["Name", "ElderlyId"],
           properties: {
             Name: { type: "string", example: "Paracetamol" },
-            ElderlyId: { type: "integer", example: 111 },
+            ElderlyId: { type: "integer", example: 1 },
             ReminderTime: { type: "string", example: "08:00:00" },
             Stock: { type: "integer", example: 30 },
             Dose: { type: "integer", example: 1 },
@@ -230,7 +230,7 @@ const spec = {
       post: { tags: ["Medicine"], summary: "Send medicine reminder (SMS + Email)",
         requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["elderlyId", "medicines"],
           properties: {
-            elderlyId: { type: "integer", example: 111 },
+            elderlyId: { type: "integer", example: 1 },
             medicines: { type: "array", items: { type: "object", properties: {
               Name: { type: "string" }, Dose: { type: "integer" },
               ReminderTime: { type: "string" }, Instructions: { type: "string" }
@@ -246,7 +246,7 @@ const spec = {
         description: "Triggers the full alert pipeline: creates incident, broadcasts WebSocket to all guardian pages (popup), sends SMS + email to guardian. Designed for OutSystems or any external system to POST alerts.",
         requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["elderly_id"],
           properties: {
-            elderly_id: { type: "integer", description: "The elderly person's ID", example: 111 },
+            elderly_id: { type: "integer", description: "The elderly person's ID", example: 1 },
             text: { type: "string", description: "Alert message/reason", example: "Fall detected by external sensor" }
           }
         } } } },

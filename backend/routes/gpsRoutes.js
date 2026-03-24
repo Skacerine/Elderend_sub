@@ -10,8 +10,8 @@ const HOME = { lat: 1.35305, lng: 103.94402 };
 let position = { lat: HOME.lat, lng: HOME.lng, ts: Date.now() };
 
 const meta = {
-  elderlyId: 1234567891234567,
-  guardianId: 1234567891234567,
+  elderlyId: 1,
+  guardianId: 1,
   name: "Mdm Tan Ah Kow",
   home: HOME,
   radius: 500

@@ -27,9 +27,11 @@ export default function AlertPopup({ alert, onDismiss }) {
         </div>
 
         <div className="popup-subtitle">
-          {isGeofence
-            ? (isLeft ? "Immediate attention may be required" : "Elderly is back within safe boundary")
-            : "A possible fall has been detected — review immediately"
+          {alert.message
+            ? alert.message
+            : isGeofence
+              ? (isLeft ? "Immediate attention may be required" : "Elderly is back within safe boundary")
+              : "A possible fall has been detected — review immediately"
           }
         </div>
 

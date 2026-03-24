@@ -261,6 +261,32 @@
 [data-theme="dark"] .mc-loading { background: var(--bg); }
 [data-theme="dark"] .mc-error { background: var(--bg); }
 
+/* Stock & days badges in dark mode */
+[data-theme="dark"] .mc-stock--ok { background: rgba(62, 229, 141, 0.12); color: var(--green); }
+[data-theme="dark"] .mc-stock--low { background: rgba(255, 200, 87, 0.12); color: var(--yellow); }
+[data-theme="dark"] .mc-stock--out { background: rgba(255, 107, 125, 0.12); color: var(--red); }
+[data-theme="dark"] .mc-days-left { color: var(--green); }
+[data-theme="dark"] .mc-days--low { color: var(--yellow); }
+[data-theme="dark"] .mc-days--out { color: var(--red); }
+[data-theme="dark"] .mc-days--ok { background: rgba(62, 229, 141, 0.12); color: var(--green); }
+[data-theme="dark"] .mc-days-badge.mc-days--low { background: rgba(255, 200, 87, 0.12); color: var(--yellow); }
+[data-theme="dark"] .mc-days-badge.mc-days--out { background: rgba(255, 107, 125, 0.12); color: var(--red); }
+[data-theme="dark"] .mc-inv-stat-label { color: var(--muted); }
+[data-theme="dark"] .mc-inv-stat-val { color: var(--text); }
+[data-theme="dark"] .mc-inv-name { color: var(--text); }
+[data-theme="dark"] .mc-text--green { color: var(--green); }
+[data-theme="dark"] .mc-text--amber { color: var(--yellow); }
+[data-theme="dark"] .mc-text--red { color: var(--red); }
+[data-theme="dark"] .mc-table-ok { color: var(--green); }
+[data-theme="dark"] .mc-table-low { color: var(--yellow); }
+[data-theme="dark"] .mc-table-out { color: var(--red); }
+[data-theme="dark"] .mc-hstat-num { color: var(--green); }
+[data-theme="dark"] .mc-card-time { color: var(--muted); }
+[data-theme="dark"] .mc-card-instr { color: var(--muted); }
+[data-theme="dark"] .mc-card-dose { color: var(--muted-2); }
+[data-theme="dark"] .mc-sched-name { color: var(--text); }
+[data-theme="dark"] .mc-restock-name { color: var(--text); }
+
 [data-theme="dark"] .ew-map-badge {
   background: rgba(8, 18, 34, 0.92);
 }
@@ -1475,14 +1501,14 @@ button { font: inherit; }
 .mc-hstat-label { font-size: 0.55rem; font-weight: 700; color: var(--muted-2); text-transform: uppercase; letter-spacing: 0.05em; }
 
 /* ── Greeting ── */
-.mc-greeting { padding: 2rem 1.5rem 0.5rem; }
+.mc-greeting { padding: 2rem 0.75rem 0.5rem; }
 .mc-greeting-label { font-size: 0.68rem; font-weight: 800; color: var(--cyan); text-transform: uppercase; letter-spacing: 1.2px; }
 .mc-greeting-title { font-size: 1.9rem; font-weight: 800; margin-top: 4px; line-height: 1.2; letter-spacing: -0.03em; }
 .mc-greeting-date { font-size: 0.875rem; color: var(--muted); font-weight: 500; margin-top: 4px; }
 
 /* ── Warnings ── */
 .mc-warn {
-  margin: 0.75rem 1.25rem; padding: 14px 16px; border-radius: var(--radius-md);
+  margin: 0.75rem 0.75rem; padding: 14px 16px; border-radius: var(--radius-md);
   font-size: 0.875rem; font-weight: 600; line-height: 1.55;
   border-left: 4px solid;
 }
@@ -1491,7 +1517,7 @@ button { font: inherit; }
 
 /* ── Next card — prominent CTA ── */
 .mc-next-card {
-  margin: 1rem 1.25rem; background: var(--cyan); border-radius: var(--radius-lg);
+  margin: 1rem 0.75rem; background: var(--cyan); border-radius: var(--radius-lg);
   padding: 1.5rem; display: flex; align-items: center; gap: 1rem;
   box-shadow: 0 8px 32px oklch(42% 0.1 160 / 0.2); color: oklch(99% 0 0);
 }
@@ -1507,7 +1533,7 @@ button { font: inherit; }
 .mc-next-badge-unit { font-size: 0.58rem; font-weight: 700; color: oklch(82% 0.04 160); text-transform: uppercase; margin-top: 1px; }
 
 .mc-all-done {
-  margin: 1rem 1.25rem; background: var(--green-soft); border: 1.5px solid oklch(50% 0.14 155 / 0.15);
+  margin: 1rem 0.75rem; background: var(--green-soft); border: 1.5px solid oklch(50% 0.14 155 / 0.15);
   border-radius: var(--radius-lg); padding: 1.5rem; text-align: center;
 }
 .mc-all-done h3 { font-size: 1.2rem; color: oklch(35% 0.1 155); font-weight: 800; }
@@ -1516,13 +1542,13 @@ button { font: inherit; }
 .mc-section-label {
   font-size: 0.65rem; font-weight: 800; color: var(--cyan);
   text-transform: uppercase; letter-spacing: 1.3px;
-  margin: 1.5rem 1.5rem 0.75rem;
+  margin: 1.5rem 0.75rem 0.75rem;
   display: flex; align-items: center; justify-content: space-between;
 }
 
 /* ── Med cards — clean with left accent ── */
 .mc-card {
-  background: var(--panel); border-radius: var(--radius-lg); margin: 0 1.25rem 0.75rem;
+  background: var(--panel); border-radius: var(--radius-lg); margin: 0 0.75rem 0.75rem;
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
@@ -1636,7 +1662,7 @@ button { font: inherit; }
 
 /* ── Table ── */
 .mc-all-meds-table {
-  margin: 0 1.25rem 0.875rem; background: var(--panel);
+  margin: 0 0.75rem 0.875rem; background: var(--panel);
   border: 1px solid var(--border); border-radius: var(--radius-lg);
   overflow: hidden; box-shadow: var(--shadow-sm);
 }
@@ -1672,7 +1698,7 @@ button { font: inherit; }
 
 /* ── Day toggle — pill selector ── */
 .mc-day-toggle {
-  display: flex; gap: 0; margin: 0.75rem 1.25rem 0.5rem;
+  display: flex; gap: 0; margin: 0.75rem 0.75rem 0.5rem;
   background: var(--border); border-radius: 99px; padding: 3px;
 }
 .mc-day-btn {
@@ -1700,7 +1726,7 @@ button { font: inherit; }
 .mc-add-btn:hover { background: oklch(90% 0.04 160); }
 
 .mc-add-form {
-  margin: 0.5rem 1.25rem 0.75rem; background: var(--panel);
+  margin: 0.5rem 0.75rem 0.75rem; background: var(--panel);
   border: 1.5px solid oklch(42% 0.1 160 / 0.2); border-radius: var(--radius-lg);
   padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 8px;
 }
@@ -1744,7 +1770,7 @@ button { font: inherit; }
   font-size: 0.78rem; display: flex; align-items: center; justify-content: center;
 }
 
-.mc-restock-schedule { margin: 0 1.25rem 0.875rem; display: flex; flex-direction: column; gap: 8px; }
+.mc-restock-schedule { margin: 0 0.75rem 0.875rem; display: flex; flex-direction: column; gap: 8px; }
 .mc-restock-item {
   background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-md);
   padding: 12px 14px; box-shadow: var(--shadow-sm);
@@ -1758,7 +1784,7 @@ button { font: inherit; }
 
 /* ── Tabs — pill style ── */
 .mc-tabs {
-  display: flex; margin: 0.5rem 1.25rem 0; background: var(--border);
+  display: flex; margin: 0.5rem 0.75rem 0; background: var(--border);
   border-radius: 99px; padding: 3px;
 }
 .mc-tab {
@@ -1770,7 +1796,7 @@ button { font: inherit; }
 .mc-tab--active { background: var(--panel); color: var(--cyan); box-shadow: var(--shadow-sm); }
 .mc-tab:hover:not(.mc-tab--active) { color: var(--text); }
 
-.mc-tab-content { padding: 0.75rem 1.25rem 0; }
+.mc-tab-content { padding: 0.75rem 0.75rem 0; }
 
 /* ── Week bar ── */
 .mc-week-bar { display: flex; gap: 4px; margin-bottom: 12px; }

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
-const ELDERLY_ID = 1234567891234567;
+const ELDERLY_ID = 111;
 
 async function get(url) {
   try {
@@ -45,7 +45,9 @@ export default function Medicare() {
   const snoozed = useRef({});
 
   const loadData = useCallback(async () => {
-    const data = await get(ELDERLY_ID ? `/medicine/${ELDERLY_ID}` : "/medicine");
+    // Try specific elderly ID first, fall back to all medicines
+    let data = ELDERLY_ID ? await get(`/medicine/${ELDERLY_ID}`) : null;
+    if (!data) data = await get("/medicine");
     if (data) {
       let arr = Array.isArray(data) ? data : [data];
       if (ELDERLY_ID) arr = arr.filter(m => !m.ElderlyId || String(m.ElderlyId) === String(ELDERLY_ID));

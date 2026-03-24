@@ -309,23 +309,13 @@ button { font: inherit; }
 }
 .ea-emergency:hover { background: #A93226; }
 .ea-emergency:active { transform: scale(0.97); }
-.ea-emergency-icon { font-size: 1.6rem; }
-
-/* ── Simulate button (small, subtle) ── */
-.ea-simulate {
-  margin: 12px 20px 0;
-  padding: 12px;
-  background: transparent;
-  color: var(--text-4);
-  border: 1.5px dashed var(--border);
-  border-radius: 14px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
-  text-align: center;
-  transition: all 0.15s;
+.ea-emergency:disabled { opacity: 0.7; cursor: default; transform: none; }
+.ea-emergency--sending { animation: ea-pulse-btn 1s ease infinite; }
+@keyframes ea-pulse-btn {
+  0%, 100% { box-shadow: 0 6px 24px rgba(192,57,43,.3); }
+  50% { box-shadow: 0 6px 32px rgba(192,57,43,.5); }
 }
-.ea-simulate:hover { border-color: var(--text-3); color: var(--text-3); }
+.ea-emergency-icon { font-size: 1.6rem; }
 
 /* ── Keep open reminder ── */
 .ea-keep-open {

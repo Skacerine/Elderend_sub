@@ -43,7 +43,8 @@ export default function App() {
         const r = await fetch(`${API_BASE}/medicine/${ELDERLY_ID}`, { signal: AbortSignal.timeout(8000) });
         if (r.ok) {
           const data = await r.json();
-          const arr = Array.isArray(data) ? data : [data];
+          let arr = Array.isArray(data) ? data : [data];
+          arr = arr.map(m => ({ ...m, Stock: m.Quantity ?? m.Stock ?? 0 }));
           setMeds(arr.filter(m => m.IsActive === true || m.IsActive === 1 || m.IsActive === "true" || m.IsActive === "1"));
         }
       } catch (e) { console.error("Meds load error:", e.message); }

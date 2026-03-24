@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import AlertPopup from "./AlertPopup";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
@@ -45,6 +46,7 @@ export default function ElderWatch() {
   const [health, setHealth] = useState({});
   const [replayState, setReplayState] = useState({ active: false });
   const [toasts, setToasts] = useState([]);
+  const [popupAlert, setPopupAlert] = useState(null);
   const lastAlertId = useRef(null);
 
   // Toast helper
@@ -122,6 +124,14 @@ export default function ElderWatch() {
           lastAlertId.current = d[0]._id;
           const a = d[0];
           showToast(a.type, a.type === "left" ? "Left Home Zone" : "Returned Home", a.address || "");
+          setPopupAlert({
+            source: "elderwatch",
+            subtype: a.type,
+            elderlyId: a.elderlyId,
+            address: a.address,
+            distance: a.distance,
+            timestamp: a.timestamp
+          });
         }
       }
       const n = await get("/notifications");
@@ -430,6 +440,8 @@ export default function ElderWatch() {
           )}
         </div>
       </div>
+
+      <AlertPopup alert={popupAlert} onDismiss={() => setPopupAlert(null)} />
     </div>
   );
 }

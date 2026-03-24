@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { connectToAlerts } from "./socket";
+import AlertPopup from "./AlertPopup";
 
 function formatTimestamp(value) {
   if (!value) return "—";
@@ -28,6 +29,7 @@ export default function GuardianDashboard() {
   const [connectionState, setConnectionState] = useState("connecting");
   const [activeAlert, setActiveAlert] = useState(null);
   const [alarmActive, setAlarmActive] = useState(false);
+  const [popupAlert, setPopupAlert] = useState(null);
 
   const audioRef = useRef(null);
   const audioEnabledRef = useRef(false);
@@ -48,6 +50,15 @@ export default function GuardianDashboard() {
           setMessages((prev) => [enrichedMessage, ...prev].slice(0, 20));
           setActiveAlert(enrichedMessage);
           triggerGuardianAlert();
+
+          const alertData = message.data || message.incident || {};
+          setPopupAlert({
+            source: "guardian",
+            elderlyId: alertData.elderlyId || "—",
+            score: alertData.score,
+            severity: alertData.severity,
+            timestamp: enrichedMessage.receivedAt
+          });
           return;
         }
 
@@ -473,6 +484,8 @@ export default function GuardianDashboard() {
           <source src="/alarm.mp3" type="audio/mpeg" />
         </audio>
       </div>
+
+      <AlertPopup alert={popupAlert} onDismiss={() => setPopupAlert(null)} />
     </div>
   );
 }

@@ -9,6 +9,9 @@ export default function NavBar() {
       <NavLink to="/elderwatch" className={({ isActive }) => `nav-link ${isActive ? "nav-link--active" : ""}`}>
         ElderWatch
       </NavLink>
+      <NavLink to="/medicare" className={({ isActive }) => `nav-link ${isActive ? "nav-link--active" : ""}`}>
+        Medicare
+      </NavLink>
     </nav>
   );
 }

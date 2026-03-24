@@ -93,6 +93,47 @@
   border-radius: 50%;
 }
 
+/* Guardian dashboard dark mode readability */
+[data-theme="dark"] .status-pill--live {
+  background: rgba(62, 229, 141, 0.1);
+  color: var(--green);
+  border-color: rgba(62, 229, 141, 0.25);
+}
+
+[data-theme="dark"] .status-pill--danger {
+  background: rgba(255, 107, 125, 0.1);
+  color: var(--red);
+  border-color: rgba(255, 107, 125, 0.25);
+}
+
+[data-theme="dark"] .status-pill {
+  background: var(--panel-soft);
+  color: var(--muted);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .panel-kicker { color: var(--cyan); }
+[data-theme="dark"] .hero-kicker { color: var(--muted); }
+[data-theme="dark"] .hero-title { color: var(--text); }
+[data-theme="dark"] .hero-copy { color: var(--muted); }
+[data-theme="dark"] .metric-label { color: var(--muted); }
+[data-theme="dark"] .metric-value { color: var(--text); }
+[data-theme="dark"] .metric-foot { color: var(--muted-2); }
+[data-theme="dark"] .live-title { color: var(--muted); }
+[data-theme="dark"] .live-value { color: var(--text); }
+[data-theme="dark"] .stat-name { color: var(--muted); }
+[data-theme="dark"] .stat-value { color: var(--text); }
+[data-theme="dark"] .detail-key { color: var(--muted); }
+[data-theme="dark"] .detail-value { color: var(--text); }
+[data-theme="dark"] .log-type { color: var(--text); }
+[data-theme="dark"] .log-time { color: var(--muted-2); }
+[data-theme="dark"] .log-body { color: var(--muted); }
+[data-theme="dark"] .info-title { color: var(--cyan); }
+[data-theme="dark"] .footer-note { color: var(--muted); }
+[data-theme="dark"] .person-name { color: var(--text); }
+[data-theme="dark"] .brand-title { color: var(--text); }
+[data-theme="dark"] .brand-subtitle { color: var(--muted-2); }
+
 [data-theme="dark"] .hero-alert {
   background: linear-gradient(180deg, rgba(10, 19, 36, 0.96), rgba(8, 17, 30, 0.96));
 }
@@ -261,7 +302,9 @@
 [data-theme="dark"] .mc-loading { background: var(--bg); }
 [data-theme="dark"] .mc-error { background: var(--bg); }
 
-/* Stock & days badges in dark mode */
+/* ── Comprehensive Medicare dark mode overrides ── */
+
+/* Stock & days badges */
 [data-theme="dark"] .mc-stock--ok { background: rgba(62, 229, 141, 0.12); color: var(--green); }
 [data-theme="dark"] .mc-stock--low { background: rgba(255, 200, 87, 0.12); color: var(--yellow); }
 [data-theme="dark"] .mc-stock--out { background: rgba(255, 107, 125, 0.12); color: var(--red); }
@@ -271,21 +314,125 @@
 [data-theme="dark"] .mc-days--ok { background: rgba(62, 229, 141, 0.12); color: var(--green); }
 [data-theme="dark"] .mc-days-badge.mc-days--low { background: rgba(255, 200, 87, 0.12); color: var(--yellow); }
 [data-theme="dark"] .mc-days-badge.mc-days--out { background: rgba(255, 107, 125, 0.12); color: var(--red); }
-[data-theme="dark"] .mc-inv-stat-label { color: var(--muted); }
-[data-theme="dark"] .mc-inv-stat-val { color: var(--text); }
-[data-theme="dark"] .mc-inv-name { color: var(--text); }
+
+/* Semantic color overrides */
 [data-theme="dark"] .mc-text--green { color: var(--green); }
 [data-theme="dark"] .mc-text--amber { color: var(--yellow); }
 [data-theme="dark"] .mc-text--red { color: var(--red); }
+[data-theme="dark"] .mc-table-name { color: var(--text); }
 [data-theme="dark"] .mc-table-ok { color: var(--green); }
 [data-theme="dark"] .mc-table-low { color: var(--yellow); }
 [data-theme="dark"] .mc-table-out { color: var(--red); }
+
+/* Header stats */
 [data-theme="dark"] .mc-hstat-num { color: var(--green); }
+[data-theme="dark"] .mc-hstat--warn .mc-hstat-num { color: var(--red); }
+[data-theme="dark"] .mc-hstat-label { color: var(--muted); }
+[data-theme="dark"] .mc-hstat { background: rgba(62, 229, 141, 0.08); border-color: rgba(62, 229, 141, 0.15); }
+[data-theme="dark"] .mc-hstat--warn { background: rgba(255, 107, 125, 0.08); border-color: rgba(255, 107, 125, 0.15); }
+
+/* Card text */
 [data-theme="dark"] .mc-card-time { color: var(--muted); }
 [data-theme="dark"] .mc-card-instr { color: var(--muted); }
 [data-theme="dark"] .mc-card-dose { color: var(--muted-2); }
+
+/* Pill badges */
+[data-theme="dark"] .mc-pill-next { background: var(--cyan); color: #fff; }
+[data-theme="dark"] .mc-pill-done { background: var(--panel-soft); color: var(--muted); border-color: var(--border); }
+
+/* Schedule cards */
+[data-theme="dark"] .mc-sched-time { color: var(--cyan); }
 [data-theme="dark"] .mc-sched-name { color: var(--text); }
+[data-theme="dark"] .mc-sched-meta { color: var(--muted); }
+
+/* Tags */
+[data-theme="dark"] .mc-tag--green { background: rgba(62, 229, 141, 0.1); color: var(--green); }
+[data-theme="dark"] .mc-tag--amber { background: rgba(255, 200, 87, 0.1); color: var(--yellow); }
+[data-theme="dark"] .mc-tag--red { background: rgba(255, 107, 125, 0.1); color: var(--red); }
+[data-theme="dark"] .mc-tag--blue { background: rgba(90, 140, 255, 0.1); color: var(--blue); }
+
+/* Inventory */
+[data-theme="dark"] .mc-inv-stat-label { color: var(--muted); }
+[data-theme="dark"] .mc-inv-stat-val { color: var(--text); }
+[data-theme="dark"] .mc-inv-name { color: var(--text); }
+[data-theme="dark"] .mc-inv-meta { color: var(--muted); }
+
+/* Restock */
 [data-theme="dark"] .mc-restock-name { color: var(--text); }
+[data-theme="dark"] .mc-restock-details { color: var(--muted); }
+[data-theme="dark"] .mc-restock-item--urgent .mc-restock-details { color: var(--red); }
+[data-theme="dark"] .mc-restock-rec { background: rgba(62, 229, 141, 0.08); color: var(--green); }
+
+/* Notify result */
+[data-theme="dark"] .mc-notify-result { background: rgba(62, 229, 141, 0.08); color: var(--green); border-color: rgba(62, 229, 141, 0.15); }
+[data-theme="dark"] .mc-notify-result--err { background: rgba(255, 107, 125, 0.08); color: var(--red); border-color: rgba(255, 107, 125, 0.15); }
+
+/* All done */
+[data-theme="dark"] .mc-all-done h3 { color: var(--green); }
+[data-theme="dark"] .mc-all-done p { color: var(--muted); }
+
+/* Alert popup */
+[data-theme="dark"] .mc-alert-name { color: var(--cyan); }
+[data-theme="dark"] .mc-alert-time { color: var(--muted); }
+[data-theme="dark"] .mc-alert-head { color: var(--muted); }
+[data-theme="dark"] .mc-alert-dose { background: rgba(62, 229, 141, 0.1); color: var(--green); border-color: rgba(62, 229, 141, 0.15); }
+
+/* Calendar */
+[data-theme="dark"] .mc-cal-title { color: var(--text); }
+[data-theme="dark"] .mc-cal-num { color: var(--text); }
+[data-theme="dark"] .mc-cal-detail-title { color: var(--text); }
+[data-theme="dark"] .mc-cal-med-time { color: var(--cyan); }
+[data-theme="dark"] .mc-cal-med-name { color: var(--text); }
+[data-theme="dark"] .mc-cal-med-dose { color: var(--muted-2); }
+
+/* Day title */
+[data-theme="dark"] .mc-day-title { color: var(--text); }
+
+/* Section labels & greeting */
+[data-theme="dark"] .mc-section-label { color: var(--cyan); }
+[data-theme="dark"] .mc-greeting-label { color: var(--cyan); }
+[data-theme="dark"] .mc-greeting-date { color: var(--muted); }
+
+/* Week bar */
+[data-theme="dark"] .mc-week-day-date { color: var(--text); }
+[data-theme="dark"] .mc-week-day-label { color: var(--muted-2); }
+[data-theme="dark"] .mc-week-day--active .mc-week-day-date { color: #fff; }
+[data-theme="dark"] .mc-week-day--active .mc-week-day-label { color: rgba(255, 255, 255, 0.7); }
+
+/* Day toggle (Today/Tomorrow buttons) */
+[data-theme="dark"] .mc-day-btn { color: var(--muted); }
+[data-theme="dark"] .mc-day-btn--active { color: var(--cyan); background: var(--panel-strong); }
+
+/* Day picker (M T W T F S S) */
+[data-theme="dark"] .mc-day-pick { color: var(--muted); background: var(--panel); border-color: var(--border); }
+[data-theme="dark"] .mc-day-pick--on { background: var(--cyan); color: #fff; border-color: var(--cyan); }
+
+/* Tabs */
+[data-theme="dark"] .mc-tab { color: var(--muted-2); }
+[data-theme="dark"] .mc-tab--active { color: var(--cyan); background: var(--panel-strong); }
+[data-theme="dark"] .mc-tab:hover:not(.mc-tab--active) { color: var(--text); }
+
+/* Empty states */
+[data-theme="dark"] .mc-empty h3 { color: var(--muted); }
+[data-theme="dark"] .mc-empty p { color: var(--muted-2); }
+[data-theme="dark"] .mc-empty-small { color: var(--muted-2); }
+
+/* Add button */
+[data-theme="dark"] .mc-add-btn { background: rgba(79, 217, 255, 0.08); color: var(--cyan); border-color: rgba(79, 217, 255, 0.15); }
+[data-theme="dark"] .mc-restock-btn { background: rgba(79, 217, 255, 0.08); color: var(--cyan); border-color: rgba(79, 217, 255, 0.15); }
+
+/* Delete button */
+[data-theme="dark"] .mc-delete-btn { background: rgba(255, 107, 125, 0.1); color: var(--red); border-color: rgba(255, 107, 125, 0.15); }
+
+/* Buttons */
+[data-theme="dark"] .mc-btn-taken { background: var(--panel-soft); color: var(--muted); border-color: var(--border); }
+[data-theme="dark"] .mc-btn-snooze { color: var(--muted); border-color: var(--border); }
+
+/* Table header and cells */
+[data-theme="dark"] .mc-all-meds-table td { color: var(--muted); border-color: var(--border); }
+
+/* Form labels */
+[data-theme="dark"] .mc-add-row label { color: var(--muted); }
 
 [data-theme="dark"] .ew-map-badge {
   background: rgba(8, 18, 34, 0.92);

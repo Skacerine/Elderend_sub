@@ -11,6 +11,7 @@ import alertRoutes from "./routes/alertRoutes.js";
 import notifyRoutes from "./routes/notifyRoutes.js";
 import medicineRoutes from "./routes/medicineRoutes.js";
 import apiDocsRoutes from "./routes/apiDocsRoutes.js";
+import externalAlertRoutes from "./routes/externalAlertRoutes.js";
 import { setWebSocketServer } from "./services/incidentService.js";
 import { initAlertListeners } from "./services/alertListener.js";
 
@@ -29,8 +30,12 @@ const allowedOrigins = [
 app.use(
   cors({
     origin(origin, callback) {
+      // Allow requests with no origin (server-to-server, Postman, curl)
       if (!origin) return callback(null, true);
+      // Allow listed frontends
       if (allowedOrigins.includes(origin)) return callback(null, true);
+      // Allow OutSystems domains
+      if (origin.includes("outsystemscloud.com") || origin.includes("outsystemsenterprise.com")) return callback(null, true);
       return callback(new Error(`CORS blocked for origin: ${origin}`));
     },
     credentials: true
@@ -59,6 +64,7 @@ app.use("/alerts", alertRoutes);
 app.use("/notifications", notifyRoutes);
 app.use("/medicine", medicineRoutes);
 app.use("/api-docs", apiDocsRoutes);
+app.use("/external", externalAlertRoutes);
 
 // Initialize geofence event listeners (replaces RabbitMQ consumers)
 initAlertListeners();

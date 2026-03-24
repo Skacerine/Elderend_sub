@@ -1784,6 +1784,7 @@ button {
     padding: 8px;
   }
   .ew-center {
+    flex: none;
     min-height: 300px;
     height: 50vh;
   }
@@ -1833,6 +1834,7 @@ button {
     grid-template-columns: 1fr;
   }
   .ew-center {
+    flex: none;
     min-height: 250px;
     height: 40vh;
   }

@@ -6,7 +6,7 @@ export function setWebSocketServer(wss) {
   wssRef = wss;
 }
 
-export function createIncident({ elderlyId, deviceId, features, severity, score }) {
+export function createIncident({ elderlyId, deviceId, features, severity, score, message }) {
   const incident = {
     incidentId: `INC-${Date.now()}`,
     elderlyId,
@@ -15,7 +15,7 @@ export function createIncident({ elderlyId, deviceId, features, severity, score 
     severity,
     score,
     timestamp: new Date().toISOString(),
-    message: "Possible fall detected from device motion pattern.",
+    message: message || "Possible fall detected from device motion pattern.",
     features
   };
 

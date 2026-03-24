@@ -38,7 +38,7 @@ export async function postElderlyLogToOutSystems({
     latitude: latitudeNum,
     longitude: longitudeNum,
     address: String(address ?? ""),
-    status: finalStatus,
+    status: String(finalStatus),
     timestamp: timestamp ?? new Date().toISOString()
   };
 

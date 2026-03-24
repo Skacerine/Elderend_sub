@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import AlertPopup from "./AlertPopup";
+import { connectToAlerts } from "./socket";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
@@ -124,14 +125,6 @@ export default function ElderWatch() {
           lastAlertId.current = d[0]._id;
           const a = d[0];
           showToast(a.type, a.type === "left" ? "Left Home Zone" : "Returned Home", a.address || "");
-          setPopupAlert({
-            source: "elderwatch",
-            subtype: a.type,
-            elderlyId: a.elderlyId,
-            address: a.address,
-            distance: a.distance,
-            timestamp: a.timestamp
-          });
         }
       }
       const n = await get("/notifications");
@@ -183,6 +176,25 @@ export default function ElderWatch() {
       clearInterval(historyTimer);
     };
   }, [updateMarker, showToast]);
+
+  // WebSocket listener for fall detection alerts (same as GuardianPhoneDropper)
+  useEffect(() => {
+    const ws = connectToAlerts({
+      onMessage: (message) => {
+        if (message.type === "drop_alert") {
+          const alertData = message.data || message.incident || {};
+          setPopupAlert({
+            source: "guardian",
+            elderlyId: alertData.elderlyId || "—",
+            score: alertData.score,
+            severity: alertData.severity,
+            timestamp: new Date().toISOString()
+          });
+        }
+      }
+    });
+    return () => ws.close();
+  }, []);
 
   // Controls
   async function setMode(m) {

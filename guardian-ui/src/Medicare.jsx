@@ -92,6 +92,8 @@ export default function Medicare() {
     if (!data) data = await get("/medicine");
     if (data) {
       let arr = Array.isArray(data) ? data : [data];
+      // Map OutSystems Quantity → Stock for frontend compat
+      arr = arr.map(m => ({ ...m, Stock: m.Quantity ?? m.Stock ?? 0 }));
       if (ELDERLY_ID) arr = arr.filter(m => !m.ElderlyId || String(m.ElderlyId) === String(ELDERLY_ID));
       setMeds(arr.filter(m => m.IsActive === true || m.IsActive === 1 || m.IsActive === "true" || m.IsActive === "1"));
       setError(null);
@@ -125,7 +127,7 @@ export default function Medicare() {
   async function handleAdd(e) {
     e.preventDefault(); setAddStatus(null);
     try {
-      await api("POST", "/medicine/create", { Name: addForm.Name, ElderlyId: ELDERLY_ID, ReminderTime: addForm.ReminderTime, Stock: addForm.Stock, Dose: addForm.Dose, Instructions: addForm.Instructions, IsActive: true, Day: dayIndexesToStr(addForm.days) });
+      await api("POST", "/medicine/create", { Name: addForm.Name, ElderlyId: ELDERLY_ID, ReminderTime: addForm.ReminderTime, Quantity: addForm.Stock, Dose: addForm.Dose, Instructions: addForm.Instructions, IsActive: true, Day: dayIndexesToStr(addForm.days) });
       const key = `${addForm.Name}_${addForm.ReminderTime}`;
       setScheduleMap(prev => ({ ...prev, [key]: addForm.days }));
       setAddStatus({ ok: true }); setAddForm({ Name: "", ReminderTime: "08:00:00", Stock: 30, Dose: 1, Instructions: "", days: [0, 1, 2, 3, 4, 5, 6] }); setShowAdd(false); loadData();
@@ -136,14 +138,14 @@ export default function Medicare() {
   async function handleStockChange(med, delta) {
     const newStock = Math.max(0, (Number(med.Stock) || 0) + delta);
     try {
-      await api("PUT", "/medicine/stock", { Name: med.Name, ElderlyId: ELDERLY_ID, Stock: newStock });
+      await api("PUT", "/medicine/stock", { MedicineId: med.Id, Quantity: newStock });
       setRestockMed(null); setRestockAmt(0); loadData();
     } catch (err) { alert("Failed: " + err.message); }
   }
 
   async function handleDelete(med) {
     if (!confirm(`Remove ${med.Name}?`)) return;
-    try { await api("PUT", "/medicine/update", { Name: med.Name, ElderlyId: ELDERLY_ID, ReminderTime: med.ReminderTime, Stock: Number(med.Stock) || 0, Dose: Number(med.Dose) || 1, Instructions: med.Instructions || "", IsActive: false, Day: med.Day || "0" }); loadData(); }
+    try { await api("PUT", "/medicine/update", { Id: med.Id, Name: med.Name, ElderlyId: ELDERLY_ID, Dose: Number(med.Dose) || 1, Instructions: med.Instructions || "", IsActive: false }); loadData(); }
     catch (err) { alert("Failed: " + err.message); }
   }
 
@@ -154,10 +156,9 @@ export default function Medicare() {
     setScheduleMap(prev => ({ ...prev, [key]: updated }));
     // Sync to OutSystems (fire and forget)
     api("PUT", "/medicine/update", {
-      Name: med.Name, ElderlyId: ELDERLY_ID, ReminderTime: med.ReminderTime,
-      Stock: Number(med.Stock) || 0, Dose: Number(med.Dose) || 1,
-      Instructions: med.Instructions || "", IsActive: true,
-      Day: dayIndexesToStr(updated)
+      Id: med.Id, Name: med.Name, ElderlyId: ELDERLY_ID,
+      Dose: Number(med.Dose) || 1,
+      Instructions: med.Instructions || "", IsActive: true
     }).catch(() => {});
   }
 

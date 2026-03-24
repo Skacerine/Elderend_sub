@@ -196,11 +196,6 @@ export default function Medicare() {
       {/* Header */}
       <div className="mc-header">
         <div className="mc-header-brand"><div className="mc-brand-dot">&#x1F48A;</div><span className="mc-brand-name">Medicare</span></div>
-        <div className="mc-header-stats">
-          <div className="mc-hstat"><span className="mc-hstat-num">{meds.length}</span><span className="mc-hstat-label">Total</span></div>
-          <div className="mc-hstat"><span className="mc-hstat-num">{todayMeds.length}</span><span className="mc-hstat-label">Today</span></div>
-          <div className="mc-hstat mc-hstat--warn"><span className="mc-hstat-num">{outOfStock.length + lowStock.length}</span><span className="mc-hstat-label">Alerts</span></div>
-        </div>
       </div>
 
       {/* Warnings */}

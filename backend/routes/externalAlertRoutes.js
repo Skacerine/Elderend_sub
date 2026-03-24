@@ -24,11 +24,9 @@ router.post("/alert", async (req, res) => {
     deviceId: "OUTSYSTEMS",
     features: {},
     severity: "FALLEN",
-    score: 100
+    score: 100,
+    message: alertText
   });
-
-  // Override the default message with the external text
-  incident.message = alertText;
 
   // Get real location if available from ElderWatch
   const location = getElderlyLocation(elderly_id);

@@ -3,6 +3,7 @@ import { scoreDropRisk } from "../services/dropDetectionService.js";
 import { createIncident } from "../services/incidentService.js";
 import { getIncidents, getLatestIncidentByElderlyId } from "../store/incidentStore.js";
 import { postElderlyLogToOutSystems } from "../services/outsystemsService.js";
+import { getElderlyLocation } from "../services/locationService.js";
 
 const router = express.Router();
 
@@ -35,13 +36,20 @@ router.post("/sample", async (req, res) => {
       score: result.score
     });
 
+    // Fetch real location from ElderWatch coordinate store
+    // Falls back to request body values, then null if unavailable
+    const realLocation = getElderlyLocation(elderlyId);
+    const finalLat = latitude ?? realLocation.latitude;
+    const finalLng = longitude ?? realLocation.longitude;
+    const finalAddr = address || realLocation.address;
+
     try {
       await postElderlyLogToOutSystems({
         elderlyId,
         guardianId,
-        latitude,
-        longitude,
-        address,
+        latitude: finalLat,
+        longitude: finalLng,
+        address: finalAddr,
         status: result.severity,
         timestamp: timestamp || new Date().toISOString()
       });
@@ -68,10 +76,7 @@ router.post("/simulate-drop", async (req, res) => {
   const {
     elderlyId = 1234567891234567,
     guardianId = 1234567891234567,
-    deviceId = "PHONE_01",
-    latitude = 1.2966,
-    longitude = 103.8502,
-    address = "Tanjong Pagar, Singapore"
+    deviceId = "PHONE_01"
   } = req.body || {};
 
   const features = {
@@ -88,6 +93,12 @@ router.post("/simulate-drop", async (req, res) => {
     severity: "FALLEN",
     score: 100
   });
+
+  // Fetch real location from ElderWatch, fall back to null
+  const realLocation = getElderlyLocation(elderlyId);
+  const latitude = req.body?.latitude ?? realLocation.latitude;
+  const longitude = req.body?.longitude ?? realLocation.longitude;
+  const address = req.body?.address || realLocation.address;
 
   try {
     const outsystemsResponse = await postElderlyLogToOutSystems({

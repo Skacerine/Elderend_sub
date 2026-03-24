@@ -18,8 +18,8 @@ export async function postElderlyLogToOutSystems({
 
   const elderlyIdNum = Number(elderlyId);
   const guardianIdNum = Number(guardianId);
-  const latitudeNum = Number(latitude ?? 0);
-  const longitudeNum = Number(longitude ?? 0);
+  const latitudeNum = latitude != null ? Number(latitude) : null;
+  const longitudeNum = longitude != null ? Number(longitude) : null;
   const finalStatus = String(status ?? "FALLEN").trim().toUpperCase();
 
   if (!Number.isFinite(elderlyIdNum) || elderlyIdNum <= 0) {

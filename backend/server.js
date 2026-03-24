@@ -1,9 +1,16 @@
-﻿import express from "express";
+import express from "express";
 import cors from "cors";
 import http from "http";
 import { WebSocketServer } from "ws";
 import motionRoutes from "./routes/motionRoutes.js";
+import gpsRoutes from "./routes/gpsRoutes.js";
+import elderlyLogRoutes from "./routes/elderlyLogRoutes.js";
+import mapRoutes from "./routes/mapRoutes.js";
+import statusRoutes from "./routes/statusRoutes.js";
+import alertRoutes from "./routes/alertRoutes.js";
+import notifyRoutes from "./routes/notifyRoutes.js";
 import { setWebSocketServer } from "./services/incidentService.js";
+import { initAlertListeners } from "./services/alertListener.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -38,7 +45,19 @@ app.get("/health", (_req, res) => {
   });
 });
 
+// Existing routes
 app.use("/motion", motionRoutes);
+
+// ElderWatch routes (ported microservices)
+app.use("/gps", gpsRoutes);
+app.use("/elderlylog", elderlyLogRoutes);
+app.use("/drawmap", mapRoutes);
+app.use("/status", statusRoutes);
+app.use("/alerts", alertRoutes);
+app.use("/notifications", notifyRoutes);
+
+// Initialize geofence event listeners (replaces RabbitMQ consumers)
+initAlertListeners();
 
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });

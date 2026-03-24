@@ -24,10 +24,23 @@ function timeMin(t) { if (!t) return 99999; const [h, m] = t.split(":").map(Numb
 function calcDays(stock, dose) { const d = Number(dose) || 1, s = Number(stock) || 0; return s <= 0 ? 0 : Math.floor(s / d); }
 function jsDay(d) { return d.getDay() === 0 ? 6 : d.getDay() - 1; } // 0=Mon..6=Sun
 
-// Parse schedule days from medicine (local state until OutSystems adds field)
+// Convert Day API field ("Mon,Wed,Fri") to index array [0,2,4]
+function parseDayField(dayStr) {
+  if (!dayStr || dayStr === "0" || dayStr === "") return null; // not set yet
+  return dayStr.split(",").map(d => DAYS.indexOf(d.trim())).filter(i => i >= 0);
+}
+
+// Convert index array [0,2,4] to API string "Mon,Wed,Fri"
+function dayIndexesToStr(indices) {
+  return indices.map(i => DAYS[i]).join(",");
+}
+
+// Get schedule days: API field first, then local state, then default all days
 function getMedDays(med, scheduleMap) {
+  const fromApi = parseDayField(med.Day);
+  if (fromApi && fromApi.length > 0) return fromApi;
   const key = `${med.Name}_${med.ReminderTime}`;
-  return scheduleMap[key] || [0, 1, 2, 3, 4, 5, 6]; // default: every day
+  return scheduleMap[key] || [0, 1, 2, 3, 4, 5, 6];
 }
 
 function getRestockSchedule(meds) {
@@ -96,7 +109,7 @@ export default function Medicare() {
   async function handleAdd(e) {
     e.preventDefault(); setAddStatus(null);
     try {
-      await api("POST", "/medicine/create", { Name: addForm.Name, ElderlyId: ELDERLY_ID, ReminderTime: addForm.ReminderTime, Stock: addForm.Stock, Dose: addForm.Dose, Instructions: addForm.Instructions, IsActive: true });
+      await api("POST", "/medicine/create", { Name: addForm.Name, ElderlyId: ELDERLY_ID, ReminderTime: addForm.ReminderTime, Stock: addForm.Stock, Dose: addForm.Dose, Instructions: addForm.Instructions, IsActive: true, Day: dayIndexesToStr(addForm.days) });
       const key = `${addForm.Name}_${addForm.ReminderTime}`;
       setScheduleMap(prev => ({ ...prev, [key]: addForm.days }));
       setAddStatus({ ok: true }); setAddForm({ Name: "", ReminderTime: "08:00:00", Stock: 30, Dose: 1, Instructions: "", days: [0, 1, 2, 3, 4, 5, 6] }); setShowAdd(false); loadData();
@@ -106,22 +119,29 @@ export default function Medicare() {
 
   async function handleRestock(med) {
     try {
-      await api("PUT", "/medicine/update", { Name: med.Name, ElderlyId: ELDERLY_ID, ReminderTime: med.ReminderTime, Stock: (Number(med.Stock) || 0) + restockAmt, Dose: Number(med.Dose) || 1, Instructions: med.Instructions || "", IsActive: true });
+      await api("PUT", "/medicine/update", { Name: med.Name, ElderlyId: ELDERLY_ID, ReminderTime: med.ReminderTime, Stock: (Number(med.Stock) || 0) + restockAmt, Dose: Number(med.Dose) || 1, Instructions: med.Instructions || "", IsActive: true, Day: med.Day || dayIndexesToStr(getMedDays(med, scheduleMap)) });
       setRestockMed(null); setRestockAmt(0); loadData();
     } catch (err) { alert("Failed: " + err.message); }
   }
 
   async function handleDelete(med) {
     if (!confirm(`Remove ${med.Name}?`)) return;
-    try { await api("PUT", "/medicine/update", { Name: med.Name, ElderlyId: ELDERLY_ID, ReminderTime: med.ReminderTime, Stock: Number(med.Stock) || 0, Dose: Number(med.Dose) || 1, Instructions: med.Instructions || "", IsActive: false }); loadData(); }
+    try { await api("PUT", "/medicine/update", { Name: med.Name, ElderlyId: ELDERLY_ID, ReminderTime: med.ReminderTime, Stock: Number(med.Stock) || 0, Dose: Number(med.Dose) || 1, Instructions: med.Instructions || "", IsActive: false, Day: med.Day || "0" }); loadData(); }
     catch (err) { alert("Failed: " + err.message); }
   }
 
-  function toggleScheduleDay(medKey, dayIdx) {
-    setScheduleMap(prev => {
-      const current = prev[medKey] || [0, 1, 2, 3, 4, 5, 6];
-      return { ...prev, [medKey]: current.includes(dayIdx) ? current.filter(d => d !== dayIdx) : [...current, dayIdx].sort() };
-    });
+  function toggleScheduleDay(med, dayIdx) {
+    const key = `${med.Name}_${med.ReminderTime}`;
+    const current = getMedDays(med, scheduleMap);
+    const updated = current.includes(dayIdx) ? current.filter(d => d !== dayIdx) : [...current, dayIdx].sort();
+    setScheduleMap(prev => ({ ...prev, [key]: updated }));
+    // Sync to OutSystems (fire and forget)
+    api("PUT", "/medicine/update", {
+      Name: med.Name, ElderlyId: ELDERLY_ID, ReminderTime: med.ReminderTime,
+      Stock: Number(med.Stock) || 0, Dose: Number(med.Dose) || 1,
+      Instructions: med.Instructions || "", IsActive: true,
+      Day: dayIndexesToStr(updated)
+    }).catch(() => {});
   }
 
   // ── Derived ──
@@ -327,7 +347,7 @@ export default function Medicare() {
                 <div className="mc-day-picker mc-day-picker--small">
                   {DAYS.map((d, i) => (
                     <button key={d} type="button" className={`mc-day-pick mc-day-pick--sm ${medDays.includes(i) ? "mc-day-pick--on" : ""}`}
-                      onClick={() => toggleScheduleDay(key, i)}>{d[0]}</button>
+                      onClick={() => toggleScheduleDay(med, i)}>{d[0]}</button>
                   ))}
                 </div>
 

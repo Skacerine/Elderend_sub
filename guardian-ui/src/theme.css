@@ -1514,6 +1514,12 @@ button {
   border-radius: 6px; font-family: inherit; font-size: 0.78rem;
   text-align: center; color: #1A1A1A;
 }
+.mc-restock-minus {
+  width: 24px; height: 24px; border-radius: 6px; border: 1px solid #F5C6C2;
+  background: #C0392B; color: white; font-weight: 700; cursor: pointer;
+  font-size: 0.85rem; display: flex; align-items: center; justify-content: center;
+}
+.mc-restock-minus:hover { background: #A93226; }
 .mc-restock-ok {
   width: 24px; height: 24px; border-radius: 6px; border: 1px solid #D6EDE4;
   background: #227A54; color: white; font-weight: 700; cursor: pointer;

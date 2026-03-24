@@ -133,9 +133,10 @@ export default function Medicare() {
     setTimeout(() => setAddStatus(null), 4000);
   }
 
-  async function handleRestock(med) {
+  async function handleStockChange(med, delta) {
+    const newStock = Math.max(0, (Number(med.Stock) || 0) + delta);
     try {
-      await api("PUT", "/medicine/update", { Name: med.Name, ElderlyId: ELDERLY_ID, ReminderTime: med.ReminderTime, Stock: (Number(med.Stock) || 0) + restockAmt, Dose: Number(med.Dose) || 1, Instructions: med.Instructions || "", IsActive: true, Day: med.Day || dayIndexesToStr(getMedDays(med, scheduleMap)) });
+      await api("PUT", "/medicine/update", { Name: med.Name, ElderlyId: ELDERLY_ID, ReminderTime: med.ReminderTime, Stock: newStock, Dose: Number(med.Dose) || 1, Instructions: med.Instructions || "", IsActive: true, Day: med.Day || dayIndexesToStr(getMedDays(med, scheduleMap)) });
       setRestockMed(null); setRestockAmt(0); loadData();
     } catch (err) { alert("Failed: " + err.message); }
   }
@@ -379,8 +380,9 @@ export default function Medicare() {
                   <div className="mc-inv-stat">
                     {isRestocking ? (
                       <div className="mc-restock-inline">
+                        <button className="mc-restock-minus" onClick={() => handleStockChange(med, -restockAmt)}>-</button>
                         <input type="number" min="1" value={restockAmt} onChange={e => setRestockAmt(+e.target.value)} className="mc-restock-input" />
-                        <button className="mc-restock-ok" onClick={() => handleRestock(med)}>+</button>
+                        <button className="mc-restock-ok" onClick={() => handleStockChange(med, restockAmt)}>+</button>
                         <button className="mc-restock-cancel" onClick={() => setRestockMed(null)}>x</button>
                       </div>
                     ) : (

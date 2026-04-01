@@ -3,7 +3,14 @@ import AlertPopup from "./AlertPopup";
 import { connectToAlerts } from "./socket";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
-const ELDERLY_ID = 1;
+
+function getElderlyId() {
+  try {
+    const u = JSON.parse(localStorage.getItem("guardian_user"));
+    return u?.elderlyId || 1;
+  } catch { return 1; }
+}
+const ELDERLY_ID = getElderlyId();
 const RESTOCK_LEAD_DAYS = 7;
 const RESTOCK_BUFFER_DAYS = 30;
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];

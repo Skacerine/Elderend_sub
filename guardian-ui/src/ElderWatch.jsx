@@ -7,7 +7,14 @@ import { connectToAlerts } from "./socket";
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
 const HOME = { lat: 1.35305, lng: 103.94402 };
-const ELDERLY_ID = 1;
+
+function getElderlyId() {
+  try {
+    const u = JSON.parse(localStorage.getItem("guardian_user"));
+    return u?.elderlyId || 1;
+  } catch { return 1; }
+}
+const ELDERLY_ID = getElderlyId();
 
 async function get(url) {
   try {

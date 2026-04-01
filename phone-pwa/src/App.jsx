@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { createMotionMonitor } from "./motionSensor";
 import { sendMotionSample, simulateDrop } from "./api";
+import { useAuth } from "./AuthContext";
 
 const STORAGE_KEY = "elderall_monitoring_enabled";
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://elderend-backend.onrender.com";
-const ELDERLY_ID = 1;
 
 function fmtTime(t) {
   if (!t) return "-";
@@ -28,7 +28,11 @@ export default function App() {
   const [medsLoading, setMedsLoading] = useState(true);
   const [clock, setClock] = useState(fmtClock());
 
-  const elderlyId = 1, guardianId = 1, deviceId = "PHONE_01";
+  const { user, logout } = useAuth();
+  const elderlyId = user?.elderlyId || 1;
+  const guardianId = 1;
+  const deviceId = "PHONE_01";
+  const ELDERLY_ID = elderlyId;
 
   // Clock
   useEffect(() => {

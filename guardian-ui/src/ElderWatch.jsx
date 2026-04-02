@@ -3,17 +3,11 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import AlertPopup from "./AlertPopup";
 import { connectToAlerts } from "./socket";
+import { useAuth } from "./AuthContext";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
 const HOME = { lat: 1.35305, lng: 103.94402 };
-
-function getElderlyId() {
-  try {
-    const u = JSON.parse(localStorage.getItem("guardian_user"));
-    return u?.elderlyId || 1;
-  } catch { return 1; }
-}
 
 async function get(url) {
   try {
@@ -35,7 +29,10 @@ async function post(url, body = {}) {
 }
 
 export default function ElderWatch() {
-  const ELDERLY_ID = getElderlyId();
+  const { user } = useAuth();
+  const ELDERLY_ID = user?.elderlyId || 1;
+  const guardianLabel = user?.name || `Guardian #${user?.guardianId || "—"}`;
+  const elderlyLabel = `Elderly #${ELDERLY_ID}`;
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const markerRef = useRef(null);
@@ -87,8 +84,8 @@ export default function ElderWatch() {
       html: `<div style="background:#d45a5a;border:3px solid #fff;border-radius:50%;width:18px;height:18px;box-shadow:0 0 0 3px rgba(212,90,90,.25),0 2px 6px rgba(0,0,0,.15)"></div>`,
       iconSize: [18, 18], iconAnchor: [9, 9], className: ""
     });
-    const marker = L.marker([HOME.lat, HOME.lng], { icon: elIcon, draggable: true, title: "Mdm Tan Ah Kow" });
-    marker.addTo(map).bindPopup("<b>Mdm Tan Ah Kow</b>");
+    const marker = L.marker([HOME.lat, HOME.lng], { icon: elIcon, draggable: true, title: elderlyLabel });
+    marker.addTo(map).bindPopup(`<b>${elderlyLabel}</b>`);
     marker.on("dragend", async (e) => {
       const { lat, lng } = e.target.getLatLng();
       await post("/gps/devicegps/position", { lat, lng });
@@ -105,7 +102,7 @@ export default function ElderWatch() {
     if (!d || !markerRef.current) return;
     markerRef.current.setLatLng([d.lat, d.lng]);
     markerRef.current.setPopupContent(
-      `<b>Mdm Tan Ah Kow</b><br>Status: <b style="color:${d.status === "Home" ? "#22d3a5" : "#f87171"}">${d.status}</b><br><small>${d.lat?.toFixed(6)}, ${d.lng?.toFixed(6)}</small>`
+      `<b>${elderlyLabel}</b><br>Status: <b style="color:${d.status === "Home" ? "#22d3a5" : "#f87171"}">${d.status}</b><br><small>${d.lat?.toFixed(6)}, ${d.lng?.toFixed(6)}</small>`
     );
     trailData.current.push([d.lat, d.lng]);
     if (trailData.current.length > 50) trailData.current.shift();
@@ -114,6 +111,17 @@ export default function ElderWatch() {
       trailRef.current = L.polyline(trailData.current, { color: "#3b82f6", weight: 2, opacity: 0.4, dashArray: "5 4" }).addTo(mapInstance.current);
     }
   }, []);
+
+  // Sync elderly ID to backend GPS simulation on mount
+  useEffect(() => {
+    post("/gps/config", { elderlyId: ELDERLY_ID, guardianId: user?.guardianId || 1 });
+  }, [ELDERLY_ID]);
+
+  // Fetch coordinate history — extracted so GPS actions can trigger it immediately
+  const fetchHistory = useCallback(async () => {
+    const d = await get(`/elderlylog/${ELDERLY_ID}?n=60`);
+    if (Array.isArray(d)) setHistory(d);
+  }, [ELDERLY_ID]);
 
   // Polling
   useEffect(() => {
@@ -136,11 +144,6 @@ export default function ElderWatch() {
       }
       const n = await get("/notifications");
       if (Array.isArray(n)) setAmqpLog(n);
-    }
-
-    async function fetchHistory() {
-      const d = await get(`/elderlylog/${ELDERLY_ID}?n=60`);
-      if (Array.isArray(d)) setHistory(d);
     }
 
     async function fetchHealth() {
@@ -170,11 +173,12 @@ export default function ElderWatch() {
     fetchData();
     fetchAlerts();
     fetchHealth();
+    fetchHistory();
 
     const dataTimer = setInterval(fetchData, 5000);
     const alertTimer = setInterval(() => { fetchAlerts(); fetchReplay(); }, 3000);
     const healthTimer = setInterval(fetchHealth, 5000);
-    const historyTimer = setInterval(fetchHistory, 8000);
+    const historyTimer = setInterval(fetchHistory, 5000);
 
     return () => {
       clearInterval(dataTimer);
@@ -182,7 +186,7 @@ export default function ElderWatch() {
       clearInterval(healthTimer);
       clearInterval(historyTimer);
     };
-  }, [updateMarker, showToast]);
+  }, [updateMarker, showToast, fetchHistory]);
 
   // WebSocket listener for fall detection alerts (same as GuardianPhoneDropper)
   useEffect(() => {
@@ -207,24 +211,26 @@ export default function ElderWatch() {
   // Controls
   async function setMode(m) {
     setModeState(m);
-    await post("/gps/config", { mode: m, speed });
+    await post("/gps/config", { mode: m, speed, elderlyId: ELDERLY_ID });
+    await fetchHistory();
   }
 
   async function setSpeed(s) {
     setSpeedState(s);
-    await post("/gps/config", { mode, speed: s });
+    await post("/gps/config", { mode, speed: s, elderlyId: ELDERLY_ID });
   }
 
   async function toggleTracking() {
     const next = !running;
     setRunning(next);
     await post(next ? "/gps/start" : "/gps/stop");
+    if (next) await fetchHistory();
   }
 
-  async function move(dLat, dLng) { await post("/gps/devicegps/move", { dLat, dLng }); }
-  async function goHome() { await post("/gps/devicegps/home"); }
-  async function randomWalk() { await post("/gps/devicegps/random"); }
-  async function onDemandFetch() { await post("/gps/devicegps/push"); }
+  async function move(dLat, dLng) { await post("/gps/devicegps/move", { dLat, dLng }); await fetchHistory(); }
+  async function goHome() { await post("/gps/devicegps/home"); await fetchHistory(); }
+  async function randomWalk() { await post("/gps/devicegps/random"); await fetchHistory(); }
+  async function onDemandFetch() { await post("/gps/devicegps/push"); await fetchHistory(); }
 
   async function startReplay(scenario) {
     const stepMs = Math.max(800, Math.round(4000 / Math.max(1, speed)));
@@ -355,7 +361,8 @@ export default function ElderWatch() {
           {/* Status */}
           <div className="ew-card" style={{ borderColor: statusData ? (isHome ? "rgba(45,122,80,.3)" : "rgba(212,90,90,.3)") : undefined }}>
             <div className="ew-card-label">TRACKING TARGET</div>
-            <div style={{ fontWeight: 700, fontFamily: "var(--font-mono)", fontSize: "0.85rem" }}>{ELDERLY_ID}</div>
+            <div style={{ fontWeight: 700, fontFamily: "var(--font-mono)", fontSize: "0.85rem" }}>{elderlyLabel}</div>
+            <div style={{ fontSize: "0.7rem", color: "var(--muted-2)", marginBottom: 4 }}>Guardian: {guardianLabel}</div>
             <div className={`ew-badge ${isHome ? "ew-badge--green" : statusData ? "ew-badge--red" : "ew-badge--blue"}`} style={{ marginTop: 6 }}>
               {statusData ? (isHome ? "HOME" : "OUTSIDE") : "WAIT"}
             </div>
@@ -393,7 +400,7 @@ export default function ElderWatch() {
           <div className="ew-card">
             <div className="ew-card-label">Quick Actions</div>
             <button className="ew-btn ew-btn--primary" style={{ width: "100%", marginBottom: 4 }} onClick={onDemandFetch}>On-Demand Location Pull</button>
-            <button className="ew-btn" style={{ width: "100%", marginBottom: 4 }} onClick={() => alert("Calling Mdm Tan Ah Kow...\n(Simulated)")}>Call Elderly</button>
+            <button className="ew-btn" style={{ width: "100%", marginBottom: 4 }} onClick={() => alert(`Calling ${elderlyLabel}...\n(Simulated)`)}>Call Elderly</button>
             <button className="ew-btn ew-btn--danger" style={{ width: "100%" }} onClick={() => alert("Emergency SOS dispatched!\n(Simulated)")}>Emergency SOS</button>
           </div>
         </div>

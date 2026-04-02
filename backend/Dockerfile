@@ -6,8 +6,7 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
-
+RUN npm install -g vite
 EXPOSE 4000
 
 CMD ["npm", "start"]
-RUN npm install -g vite

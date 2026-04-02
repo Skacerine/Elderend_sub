@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { connectToAlerts } from "./socket";
 import AlertPopup from "./AlertPopup";
+import { useAuth } from "./AuthContext";
 
 function formatTimestamp(value) {
   if (!value) return "—";
@@ -24,6 +25,7 @@ function severityTone(severity) {
 }
 
 export default function GuardianDashboard() {
+  const { user } = useAuth();
   const [messages, setMessages] = useState([]);
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [connectionState, setConnectionState] = useState("connecting");
@@ -146,7 +148,7 @@ export default function GuardianDashboard() {
   const alertData = activeAlert?.data || activeAlert?.incident || {};
   const features = alertData.features || {};
   const incidentId = alertData.id || alertData.incidentId || "—";
-  const elderlyId = alertData.elderlyId || "1";
+  const elderlyId = alertData.elderlyId || user?.elderlyId || "—";
   const deviceId = alertData.deviceId || "PHONE_01";
   const score = alertData.score ?? activeAlert?.score ?? "—";
   const severity = alertData.severity || activeAlert?.severity || "LOW";
@@ -246,10 +248,12 @@ export default function GuardianDashboard() {
                   <div className="info-card">
                     <div className="info-title">Assigned Guardian</div>
                     <div className="person-card">
-                      <div className="avatar">AW</div>
+                      <div className="avatar">
+                        {user?.name ? user.name.trim().slice(0, 2).toUpperCase() : "??"}
+                      </div>
                       <div>
-                        <div className="person-name">Guardian Operator</div>
-                        <div className="person-id">guardian-001</div>
+                        <div className="person-name">{user?.name || "Unknown Guardian"}</div>
+                        <div className="person-id">guardian-{user?.guardianId || "—"}</div>
                       </div>
                     </div>
                   </div>

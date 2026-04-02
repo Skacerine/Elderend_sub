@@ -169,11 +169,13 @@ router.post("/devicegps/push", (_req, res) => {
 });
 
 router.post("/config", (req, res) => {
-  const { mode, speed } = req.body;
+  const { mode, speed, elderlyId, guardianId } = req.body;
   if (mode) simCfg.mode = mode;
   if (speed != null) simCfg.speed = Math.max(1, Number(speed));
+  if (elderlyId != null) meta.elderlyId = elderlyId;
+  if (guardianId != null) meta.guardianId = guardianId;
   restartTimer();
-  res.json({ success: true, ...simCfg, intervalMs: intervalMs() });
+  res.json({ success: true, ...simCfg, elderlyId: meta.elderlyId, intervalMs: intervalMs() });
 });
 
 router.get("/simconfig", (_req, res) =>

@@ -14,7 +14,6 @@ function getElderlyId() {
     return u?.elderlyId || 1;
   } catch { return 1; }
 }
-const ELDERLY_ID = getElderlyId();
 
 async function get(url) {
   try {
@@ -36,6 +35,7 @@ async function post(url, body = {}) {
 }
 
 export default function ElderWatch() {
+  const ELDERLY_ID = getElderlyId();
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const markerRef = useRef(null);

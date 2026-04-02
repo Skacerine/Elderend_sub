@@ -10,7 +10,6 @@ function getElderlyId() {
     return u?.elderlyId || 1;
   } catch { return 1; }
 }
-const ELDERLY_ID = getElderlyId();
 const RESTOCK_LEAD_DAYS = 7;
 const RESTOCK_BUFFER_DAYS = 30;
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -76,6 +75,7 @@ function getMonthGrid(year, month) {
 }
 
 export default function Medicare() {
+  const ELDERLY_ID = getElderlyId();
   const [meds, setMeds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

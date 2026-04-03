@@ -97,7 +97,18 @@ export default function Medicare() {
       // Map OutSystems Quantity → Stock for frontend compat
       arr = arr.map(m => ({ ...m, Stock: m.Quantity ?? m.Stock ?? 0 }));
       if (ELDERLY_ID) arr = arr.filter(m => !m.ElderlyId || String(m.ElderlyId) === String(ELDERLY_ID));
-      setMeds(arr.filter(m => m.IsActive === true || m.IsActive === 1 || m.IsActive === "true" || m.IsActive === "1"));
+      const active = arr.filter(m => m.IsActive === true || m.IsActive === 1 || m.IsActive === "true" || m.IsActive === "1");
+      setMeds(active);
+      // Rebuild scheduleMap from API Day fields so local state stays in sync
+      setScheduleMap(prev => {
+        const next = { ...prev };
+        active.forEach(m => {
+          const key = `${m.Name}_${m.ReminderTime}`;
+          const fromApi = parseDayField(m.Day);
+          if (fromApi && fromApi.length > 0) next[key] = fromApi;
+        });
+        return next;
+      });
       setError(null);
     } else {
       // Both fetches failed (service down) — only show error if nothing is cached
@@ -159,12 +170,13 @@ export default function Medicare() {
     const current = getMedDays(med, scheduleMap);
     const updated = current.includes(dayIdx) ? current.filter(d => d !== dayIdx) : [...current, dayIdx].sort();
     setScheduleMap(prev => ({ ...prev, [key]: updated }));
-    // Sync to OutSystems (fire and forget)
+    // Sync to OutSystems including the Day field
     api("PUT", "/medicine/update", {
       Id: med.Id, Name: med.Name, ElderlyId: ELDERLY_ID,
       Dose: Number(med.Dose) || 1,
-      Instructions: med.Instructions || "", IsActive: true
-    }).catch(() => {});
+      Instructions: med.Instructions || "", IsActive: true,
+      Day: dayIndexesToStr(updated)
+    }).then(() => loadData()).catch(() => {});
   }
 
   // ── Derived ──

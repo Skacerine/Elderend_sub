@@ -1,18 +1,36 @@
 services:
   backend:
     build: ./backend
-    container_name: drop-backend
+    container_name: medicare-backend
     ports:
       - "4000:4000"
+    environment:
+      - PORT=4000
+      - GUARDIAN_UI_URL=http://localhost:5173
+      - PHONE_PWA_URL=http://localhost:5174
+    networks:
+      - elderall-net
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4000/medicine/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   guardian-ui:
     build: ./guardian-ui
     container_name: guardian-ui
     ports:
       - "5173:5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:4000
+      - VITE_WS_BASE_URL=ws://localhost:4000
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    networks:
+      - elderall-net
     restart: unless-stopped
 
   phone-pwa:
@@ -20,6 +38,15 @@ services:
     container_name: phone-pwa
     ports:
       - "5174:5174"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:4000
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    networks:
+      - elderall-net
     restart: unless-stopped
+
+networks:
+  elderall-net:
+    driver: bridge

@@ -746,10 +746,10 @@ button { font: inherit; }
   margin-top: 4px;
 }
 
-/* ── Main 3-column grid ── */
+/* ── Main 2-column grid ── */
 .guardian-grid {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr) 320px;
+  grid-template-columns: 300px minmax(0, 1fr);
   gap: 10px;
 }
 

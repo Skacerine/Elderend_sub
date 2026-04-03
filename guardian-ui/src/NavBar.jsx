@@ -23,6 +23,9 @@ export default function NavBar() {
       <NavLink to="/medicare" className={({ isActive }) => `nav-link ${isActive ? "nav-link--active" : ""}`}>
         Medicare
       </NavLink>
+      <NavLink to="/elderwatch-dev" className={({ isActive }) => `nav-link ${isActive ? "nav-link--active" : ""}`}>
+        ElderWatch(Dev)
+      </NavLink>
       <NavLink to="/dev" className={({ isActive }) => `nav-link ${isActive ? "nav-link--active" : ""}`}>
         GuardianUI(Dev)
       </NavLink>

@@ -94,7 +94,15 @@ export default function App() {
     } catch (e) { setErrorMessage(e.message || "Failed"); setStatus(isMonitoring ? "Protected" : "Paused"); }
   }
 
-  const sortedMeds = [...meds].sort((a, b) => (a.ReminderTime || "").localeCompare(b.ReminderTime || ""));
+  // Filter to only show medicines scheduled for today
+  const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const todayIdx = (() => { const d = new Date().getDay(); return d === 0 ? 6 : d - 1; })(); // 0=Mon..6=Sun
+  const todayMeds = meds.filter(m => {
+    if (!m.Day || m.Day === "0" || m.Day === "") return true; // no schedule set = every day
+    const scheduled = m.Day.split(",").map(d => DAYS.indexOf(d.trim())).filter(i => i >= 0);
+    return scheduled.length === 0 || scheduled.includes(todayIdx);
+  });
+  const sortedMeds = [...todayMeds].sort((a, b) => (a.ReminderTime || "").localeCompare(b.ReminderTime || ""));
   const h = new Date().getHours();
   const greeting = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
   const isAlert = lastResponse?.detected;

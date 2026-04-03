@@ -69,12 +69,25 @@ router.delete("/delete", async (req, res) => {
 // POST /medicine/create — create new medicine in OutSystems
 router.post("/create", async (req, res) => {
   try {
+    // Ensure correct types for OutSystems
+    const payload = {
+      Name: String(req.body.Name || ""),
+      ElderlyId: Number(req.body.ElderlyId) || 1,
+      ReminderTime: String(req.body.ReminderTime || "08:00:00"),
+      Quantity: Number(req.body.Quantity) || 0,
+      Dose: Number(req.body.Dose) || 1,
+      Instructions: String(req.body.Instructions || ""),
+      IsActive: true,
+      Day: String(req.body.Day || "")
+    };
+    console.log("[Medicine] Creating:", JSON.stringify(payload));
     const response = await fetch(`${MEDICINE_BASE_URL}/medicine/`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify(req.body)
+      body: JSON.stringify(payload)
     });
     const text = await response.text();
+    console.log("[Medicine] Create response:", response.status, text);
     try { res.status(response.status).json(JSON.parse(text)); }
     catch { res.status(response.status).json({ result: text }); }
   } catch (e) {
@@ -86,12 +99,25 @@ router.post("/create", async (req, res) => {
 // PUT /medicine/update — update medicine in OutSystems (e.g. restock)
 router.put("/update", async (req, res) => {
   try {
+    const payload = {
+      Id: Number(req.body.Id),
+      Name: String(req.body.Name || ""),
+      ElderlyId: Number(req.body.ElderlyId) || 1,
+      Dose: Number(req.body.Dose) || 1,
+      Instructions: String(req.body.Instructions || ""),
+      IsActive: req.body.IsActive !== undefined ? req.body.IsActive : true
+    };
+    if (req.body.Day !== undefined) payload.Day = String(req.body.Day);
+    if (req.body.ReminderTime !== undefined) payload.ReminderTime = String(req.body.ReminderTime);
+    if (req.body.Quantity !== undefined) payload.Quantity = Number(req.body.Quantity);
+    console.log("[Medicine] Updating:", JSON.stringify(payload));
     const response = await fetch(`${MEDICINE_BASE_URL}/medicine/`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify(req.body)
+      body: JSON.stringify(payload)
     });
     const text = await response.text();
+    console.log("[Medicine] Update response:", response.status, text);
     try { res.status(response.status).json(JSON.parse(text)); }
     catch { res.status(response.status).json({ result: text }); }
   } catch (e) {

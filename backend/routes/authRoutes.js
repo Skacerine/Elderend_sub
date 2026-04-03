@@ -90,6 +90,7 @@ router.post("/login/guardian", async (req, res) => {
       body: JSON.stringify({ guardian_contact: phone, password: password }),
     });
     const data = await response.json();
+    console.log("[Auth] Guardian login response:", JSON.stringify(data));
     if (data.success) {
       return res.json({
         success: true,

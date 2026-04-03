@@ -9,7 +9,7 @@ COPY . .
 
 EXPOSE 4000
 
-HEALTHCHECK --interval=15s --timeout=5s --retries=3 \
-  CMD wget -qO- http://localhost:4000/medicine/health || exit 1
+HEALTHCHECK --interval=10s --timeout=5s --retries=5 --start-period=15s \
+  CMD node -e "fetch('http://localhost:4000/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
 
 CMD ["npm", "start"]

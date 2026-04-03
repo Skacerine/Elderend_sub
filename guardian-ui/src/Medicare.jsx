@@ -1,15 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
 import AlertPopup from "./AlertPopup";
 import { connectToAlerts } from "./socket";
+import { useAuth } from "./AuthContext";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
-
-function getElderlyId() {
-  try {
-    const u = JSON.parse(localStorage.getItem("guardian_user"));
-    return u?.elderlyId || 1;
-  } catch { return 1; }
-}
 const RESTOCK_LEAD_DAYS = 7;
 const RESTOCK_BUFFER_DAYS = 30;
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -75,7 +69,8 @@ function getMonthGrid(year, month) {
 }
 
 export default function Medicare() {
-  const ELDERLY_ID = getElderlyId();
+  const { user } = useAuth();
+  const ELDERLY_ID = user?.elderlyId || 1;
   const [meds, setMeds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -104,9 +99,12 @@ export default function Medicare() {
       if (ELDERLY_ID) arr = arr.filter(m => !m.ElderlyId || String(m.ElderlyId) === String(ELDERLY_ID));
       setMeds(arr.filter(m => m.IsActive === true || m.IsActive === 1 || m.IsActive === "true" || m.IsActive === "1"));
       setError(null);
-    } else if (meds.length === 0) setError("Could not load medication data.");
+    } else {
+      // Both fetches failed (service down) — only show error if nothing is cached
+      setMeds(prev => { if (prev.length === 0) setError("Could not reach medication service."); return prev; });
+    }
     setLoading(false);
-  }, []);
+  }, [ELDERLY_ID]);
 
   useEffect(() => { loadData(); const t = setInterval(loadData, 30000); return () => clearInterval(t); }, [loadData]);
 
@@ -197,7 +195,8 @@ export default function Medicare() {
   const calMeds = medsForDay(calDayIdx);
 
   if (loading) return <div className="mc-loading"><div className="mc-loader-icon">&#x1F48A;</div><div className="mc-loader-ring" /><div className="mc-loader-text">Loading...</div></div>;
-  if (error && !meds.length) return <div className="mc-error"><div className="mc-error-card"><h2>Unable to Connect</h2><p>{error}</p><button className="mc-btn-retry" onClick={loadData}>Retry</button></div></div>;
+  // Only block the whole page if the service is genuinely unreachable — not just empty
+  if (error && !meds.length && error.includes("reach")) return <div className="mc-error"><div className="mc-error-card"><h2>Unable to Connect</h2><p>{error}</p><button className="mc-btn-retry" onClick={loadData}>Retry</button></div></div>;
 
   return (
     <div className="mc-app">

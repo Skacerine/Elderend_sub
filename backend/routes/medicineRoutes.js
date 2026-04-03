@@ -15,6 +15,8 @@ router.get("/:elderlyId", async (req, res) => {
     const response = await fetch(`${MEDICINE_BASE_URL}/medicine/${req.params.elderlyId}/`, {
       headers: { Accept: "application/json" }
     });
+    // 404 means this elderly has no medicines yet — return empty array, not an error
+    if (response.status === 404) return res.json([]);
     if (!response.ok) {
       const text = await response.text();
       return res.status(response.status).json({ error: text });
@@ -33,6 +35,7 @@ router.get("/", async (_req, res) => {
     const response = await fetch(`${MEDICINE_BASE_URL}/medicines/`, {
       headers: { Accept: "application/json" }
     });
+    if (response.status === 404) return res.json([]);
     if (!response.ok) {
       const text = await response.text();
       return res.status(response.status).json({ error: text });

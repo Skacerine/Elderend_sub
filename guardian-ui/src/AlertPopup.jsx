@@ -10,7 +10,7 @@ export default function AlertPopup({ alert, onDismiss }) {
   }, [alert, onDismiss]);
 
   const isGeofence = alert.source === "elderwatch";
-  const isLeft = alert.subtype === "left";
+  const isLeft = alert.subtype === "left" || alert.type === "left";
 
   return (
     <div className="popup-overlay" onClick={onDismiss}>

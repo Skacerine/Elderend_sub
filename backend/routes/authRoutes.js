@@ -56,7 +56,7 @@ router.post("/register", async (req, res) => {
     }
 
     // Step 3: Link elderly to guardian
-    await fetch(`${ELDERLY_BASE}/LinkGuardian`, {
+    const linkRes = await fetch(`${ELDERLY_BASE}/LinkGuardian`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -64,6 +64,9 @@ router.post("/register", async (req, res) => {
         guardian_id: guardianData.guardian_id,
       }),
     });
+    if (!linkRes.ok) {
+      console.error("[Auth] LinkGuardian failed:", linkRes.status, await linkRes.text().catch(() => ""));
+    }
 
     return res.json({
       success: true,

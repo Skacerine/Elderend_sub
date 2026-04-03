@@ -129,10 +129,14 @@ router.put("/update", async (req, res) => {
 // PUT /medicine/stock — update stock via OutSystems /stock/ endpoint
 router.put("/stock", async (req, res) => {
   try {
+    const payload = {
+      MedicineId: Number(req.body.MedicineId),
+      Quantity: Number(req.body.Quantity) || 0
+    };
     const response = await fetch(`${MEDICINE_BASE_URL}/stock/`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify(req.body)
+      body: JSON.stringify(payload)
     });
     const text = await response.text();
     try { res.status(response.status).json(JSON.parse(text)); }

@@ -247,7 +247,13 @@ export default function Medicare() {
             {selectedDay === todayIdx ? " (Today)" : ""}
           </div>
 
-          {medsForDay(selectedDay).length === 0 ? (
+          {meds.length === 0 ? (
+            <div className="mc-empty-small" style={{ textAlign: "center", padding: "24px 0" }}>
+              <div style={{ fontSize: "2rem", marginBottom: 8 }}>&#x1F48A;</div>
+              <div>No medicines yet.</div>
+              <div style={{ marginTop: 4, color: "var(--muted-2)" }}>Go to the <strong>Inventory</strong> tab and tap <strong>+ Add</strong> to set up your elderly's medication schedule.</div>
+            </div>
+          ) : medsForDay(selectedDay).length === 0 ? (
             <div className="mc-empty-small">No medicines scheduled for {DAY_FULL[selectedDay]}</div>
           ) : (
             <div className="mc-schedule-list">

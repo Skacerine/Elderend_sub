@@ -146,10 +146,7 @@ export default function GuardianDashboard() {
   }
 
   const alertData = activeAlert?.data || activeAlert?.incident || {};
-  const features = alertData.features || {};
-  const incidentId = alertData.id || alertData.incidentId || "—";
   const elderlyId = alertData.elderlyId || user?.elderlyId || "—";
-  const deviceId = alertData.deviceId || "PHONE_01";
   const score = alertData.score ?? activeAlert?.score ?? "—";
   const severity = alertData.severity || activeAlert?.severity || "LOW";
   const totalAlerts = messages.filter((m) => m.type === "drop_alert").length;
@@ -173,7 +170,7 @@ export default function GuardianDashboard() {
               <div>
                 <div className="brand-title">ElderWatch Guardian Console</div>
                 <div className="brand-subtitle">
-                  Real-time fall monitoring, alert coordination, and guardian response control
+                  Real-time fall monitoring and guardian alert system
                 </div>
               </div>
             </div>
@@ -194,17 +191,17 @@ export default function GuardianDashboard() {
             <div className="metric-card">
               <div className="metric-label">Connection</div>
               <div className="metric-value">{connectionLabel}</div>
-              <div className="metric-foot">WebSocket alert stream</div>
+              <div className="metric-foot">Live alert stream</div>
             </div>
             <div className="metric-card">
               <div className="metric-label">Alert Sound</div>
               <div className="metric-value">{audioEnabled ? "Enabled" : "Locked"}</div>
-              <div className="metric-foot">Browser audio permission</div>
+              <div className="metric-foot">Sound notification</div>
             </div>
             <div className="metric-card">
               <div className="metric-label">Total Alerts</div>
               <div className="metric-value">{totalAlerts}</div>
-              <div className="metric-foot">Last 20 retained events</div>
+              <div className="metric-foot">Recent alerts received</div>
             </div>
           </div>
 
@@ -216,18 +213,18 @@ export default function GuardianDashboard() {
               </div>
               <div className="status-pill">
                 <span className="status-dot status-dot--cyan" />
-                Score threshold: 100
+                Active
               </div>
             </div>
 
             <div className="live-strip">
               <div>
-                <div className="live-title">Current risk state</div>
+                <div className="live-title">Current status</div>
                 <div className="live-value">{activeAlert ? severityTone(severity) : "Nominal"}</div>
               </div>
               <div className={`status-pill ${severity === "HIGH" ? "status-pill--danger" : ""}`}>
                 <span className={`status-dot ${severity === "HIGH" ? "status-dot--red" : "status-dot--green"}`} />
-                {severity}
+                {severityTone(severity)}
               </div>
             </div>
           </div>
@@ -240,7 +237,7 @@ export default function GuardianDashboard() {
                 <div className="panel-kicker">Guardian</div>
                 <div className="panel-title">Response Controls</div>
                 <div className="panel-subtitle">
-                  Keep the dashboard armed, audible, and ready to respond.
+                  Manage your alert settings and responses.
                 </div>
               </div>
               <div className="panel-body">
@@ -274,8 +271,7 @@ export default function GuardianDashboard() {
                   </div>
 
                   <div className="control-help">
-                    The guardian dashboard requires a one-time user interaction to unlock browser audio.
-                    Once enabled, new live alerts will ring automatically.
+                    Tap "Enable Sound" so you'll hear an alarm when a fall is detected.
                   </div>
                 </div>
               </div>
@@ -301,8 +297,8 @@ export default function GuardianDashboard() {
 
               <div className="hero-copy">
                 {activeAlert
-                  ? "A suspicious motion event crossed the configured risk threshold. Review the score, device details, and motion features below, then decide whether guardian intervention is needed."
-                  : "The system is connected and listening for live drop alerts from the elderly phone app. No active emergency is currently being processed."}
+                  ? "A possible fall has been detected. Please check on your elderly person and take appropriate action if needed."
+                  : "The system is actively monitoring. You will be alerted immediately if a fall is detected."}
               </div>
 
               <div className="hero-stats">
@@ -315,12 +311,8 @@ export default function GuardianDashboard() {
                   <div className="stat-value">{elderlyId}</div>
                 </div>
                 <div className="stat-tile">
-                  <div className="stat-name">Risk Score</div>
-                  <div className="stat-value">{formatValue(score)}</div>
-                </div>
-                <div className="stat-tile">
-                  <div className="stat-name">Severity</div>
-                  <div className="stat-value">{severity}</div>
+                  <div className="stat-name">Alert Level</div>
+                  <div className="stat-value">{severityTone(severity)}</div>
                 </div>
               </div>
 
@@ -339,42 +331,8 @@ export default function GuardianDashboard() {
 
           </div>
 
-          <div className="guardian-right">
-            <div className="panel">
-              <div className="panel-header">
-                <div className="panel-kicker">Incident Details</div>
-                <div className="panel-title">Motion Summary</div>
-                <div className="panel-subtitle">
-                  Current target state, scoring details, and captured sensor features.
-                </div>
-              </div>
-              <div className="panel-body">
-                <div className="details-grid">
-                  <div className="detail-row">
-                    <div className="detail-key">Device</div>
-                    <div className="detail-value">{deviceId}</div>
-                  </div>
-                  <div className="detail-row">
-                    <div className="detail-key">Min Acceleration</div>
-                    <div className="detail-value">{formatValue(features.minAcceleration)}</div>
-                  </div>
-                  <div className="detail-row">
-                    <div className="detail-key">Peak Acceleration</div>
-                    <div className="detail-value">{formatValue(features.peakAcceleration)}</div>
-                  </div>
-                  <div className="detail-row">
-                    <div className="detail-key">Peak Rotation</div>
-                    <div className="detail-value">{formatValue(features.peakRotationRate)}</div>
-                  </div>
-                  <div className="detail-row">
-                    <div className="detail-key">Post-impact Stillness</div>
-                    <div className="detail-value">{formatValue(features.postImpactStillnessMs)} ms</div>
-                  </div>
-                </div>
-              </div>
-            </div>
 
-          </div>
+
         </div>
 
         <audio ref={audioRef} preload="auto" loop playsInline>

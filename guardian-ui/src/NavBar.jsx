@@ -15,7 +15,7 @@ export default function NavBar() {
   return (
     <nav className="app-nav">
       <NavLink to="/" end className={({ isActive }) => `nav-link ${isActive ? "nav-link--active" : ""}`}>
-        GuardianPhoneDropper
+        GuardianUI
       </NavLink>
       <NavLink to="/elderwatch" className={({ isActive }) => `nav-link ${isActive ? "nav-link--active" : ""}`}>
         ElderWatch
@@ -24,7 +24,7 @@ export default function NavBar() {
         Medicare
       </NavLink>
       <NavLink to="/dev" className={({ isActive }) => `nav-link ${isActive ? "nav-link--active" : ""}`}>
-        Dev
+        GuardianUI(Dev)
       </NavLink>
 
       <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "10px" }}>

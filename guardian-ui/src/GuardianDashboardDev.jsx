@@ -24,7 +24,7 @@ function severityTone(severity) {
   return "Low";
 }
 
-export default function GuardianDashboard() {
+export default function GuardianDashboardDev() {
   const { user } = useAuth();
   const [messages, setMessages] = useState([]);
   const [audioEnabled, setAudioEnabled] = useState(false);
@@ -281,6 +281,30 @@ export default function GuardianDashboard() {
               </div>
             </div>
 
+            <div className="panel">
+              <div className="panel-header">
+                <div className="panel-kicker">System Notes</div>
+                <div className="panel-title">Operational Guidance</div>
+              </div>
+              <div className="panel-body">
+                <div className="stack">
+                  <div className="info-card">
+                    <div className="info-title">When to act</div>
+                    <div className="footer-note">
+                      A rising score usually reflects a suspicious sequence such as drop, impact,
+                      rotation, and stillness. Alerts should be reviewed immediately, call your elderly!
+                    </div>
+                  </div>
+                  <div className="info-card">
+                    <div className="info-title">Threshold tuning</div>
+                    <div className="footer-note">
+                      The backend currently rings only at score 100 and above to reduce false alarms
+                      from normal handling of phones.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="guardian-main">
@@ -307,8 +331,8 @@ export default function GuardianDashboard() {
 
               <div className="hero-stats">
                 <div className="stat-tile">
-                  <div className="stat-name">Date Time</div>
-                  <div className="stat-value">{formatTimestamp(activeAlert?.receivedAt)}</div>
+                  <div className="stat-name">Incident ID</div>
+                  <div className="stat-value">{incidentId}</div>
                 </div>
                 <div className="stat-tile">
                   <div className="stat-name">Elderly ID</div>
@@ -337,6 +361,58 @@ export default function GuardianDashboard() {
               </div>
             </div>
 
+            <div className="activity-grid">
+              <div className="panel">
+                <div className="panel-header">
+                  <div className="panel-kicker">Event Stream</div>
+                  <div className="panel-title">Recent System Activity</div>
+                  <div className="panel-subtitle">
+                    Latest websocket messages, alerts, and system notices.
+                  </div>
+                </div>
+                <div className="panel-body">
+                  {latestLogs.length === 0 ? (
+                    <div className="alert-empty">
+                      No activity yet. Once the phone sends a suspicious motion event, it will appear here.
+                    </div>
+                  ) : (
+                    <div className="log-list">
+                      {latestLogs.map((msg, index) => (
+                        <div
+                          key={`${msg.type}-${msg.receivedAt}-${index}`}
+                          className={`log-item ${msg.type === "drop_alert" ? "log-item--alert" : ""}`}
+                        >
+                          <div className="log-top">
+                            <div className="log-type">{msg.type}</div>
+                            <div className="log-time">{formatTimestamp(msg.receivedAt)}</div>
+                          </div>
+                          <div className="log-body">
+                            {msg.type === "drop_alert"
+                              ? "High-priority alert broadcast received from backend incident service."
+                              : "System message captured by guardian websocket client."}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="panel">
+                <div className="panel-header">
+                  <div className="panel-kicker">Live Payload</div>
+                  <div className="panel-title">Alert JSON</div>
+                  <div className="panel-subtitle">
+                    Raw incident data for debugging, validation, and grading visibility.
+                  </div>
+                </div>
+                <div className="panel-body">
+                  <pre className="json-block">
+                    {JSON.stringify(activeAlert?.data || activeAlert || { message: "Waiting for live alert..." }, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="guardian-right">
@@ -353,6 +429,10 @@ export default function GuardianDashboard() {
                   <div className="detail-row">
                     <div className="detail-key">Device</div>
                     <div className="detail-value">{deviceId}</div>
+                  </div>
+                  <div className="detail-row">
+                    <div className="detail-key">Received</div>
+                    <div className="detail-value">{formatTimestamp(activeAlert?.receivedAt)}</div>
                   </div>
                   <div className="detail-row">
                     <div className="detail-key">Min Acceleration</div>
@@ -374,6 +454,34 @@ export default function GuardianDashboard() {
               </div>
             </div>
 
+            <div className="panel">
+              <div className="panel-header">
+                <div className="panel-kicker">Guardian Interpretation</div>
+                <div className="panel-title">What to Look For</div>
+              </div>
+              <div className="panel-body">
+                <div className="stack">
+                  <div className="info-card">
+                    <div className="info-title">High score usually means</div>
+                    <div className="footer-note">
+                      A strong sequence of suspicious motion indicators, not just one isolated movement.
+                    </div>
+                  </div>
+                  <div className="info-card">
+                    <div className="info-title">Stillness is contextual</div>
+                    <div className="footer-note">
+                      Stillness is more meaningful after impact-like motion. A phone resting quietly should not be treated as a fall on its own.
+                    </div>
+                  </div>
+                  <div className="info-card">
+                    <div className="info-title">Guardian action</div>
+                    <div className="footer-note">
+                      Use this console as an early warning tool. Verify with the elderly person if possible before escalating.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

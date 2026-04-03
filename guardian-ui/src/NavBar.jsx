@@ -23,6 +23,9 @@ export default function NavBar() {
       <NavLink to="/medicare" className={({ isActive }) => `nav-link ${isActive ? "nav-link--active" : ""}`}>
         Medicare
       </NavLink>
+      <NavLink to="/dev" className={({ isActive }) => `nav-link ${isActive ? "nav-link--active" : ""}`}>
+        Dev
+      </NavLink>
 
       <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "10px" }}>
         {user && (

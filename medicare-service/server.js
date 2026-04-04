@@ -33,6 +33,10 @@ app.get("/health", (_req, res) =>
 //  Medicine Routes (proxy to OutSystems)
 // ══════════════════════════════════════��
 
+// OutSystems requires full day names, not abbreviations
+const DAY_ABBR_TO_FULL = { Mon: "Monday", Tue: "Tuesday", Wed: "Wednesday", Thu: "Thursday", Fri: "Friday", Sat: "Saturday", Sun: "Sunday" };
+function toFullDay(abbr) { return DAY_ABBR_TO_FULL[abbr] || abbr; }
+
 app.get("/medicine/health", (_req, res) =>
   res.json({ status: "online", service: "medicare-medicine-proxy" })
 );
@@ -57,8 +61,14 @@ app.get("/medicine/:elderlyId", async (req, res) => {
 });
 
 // POST /medicine/create
+// OutSystems only accepts a single full day name per create call.
+// For multiple days, create with the first day then add schedule entries for the rest.
 app.post("/medicine/create", async (req, res) => {
   try {
+    const dayStr = String(req.body.Day || "");
+    const days = dayStr.split(",").map(d => toFullDay(d.trim())).filter(Boolean);
+    const firstDay = days[0] || "Monday";
+
     const payload = {
       Name: String(req.body.Name || ""),
       ElderlyId: Number(req.body.ElderlyId) || 1,
@@ -67,7 +77,7 @@ app.post("/medicine/create", async (req, res) => {
       Dose: Number(req.body.Dose) || 1,
       Instructions: String(req.body.Instructions || ""),
       IsActive: true,
-      Day: String(req.body.Day || ""),
+      Day: firstDay,
     };
     console.log("[Medicine] Creating:", JSON.stringify(payload));
     const response = await fetch(`${MEDICINE_BASE_URL}/medicine/`, {
@@ -77,8 +87,34 @@ app.post("/medicine/create", async (req, res) => {
     });
     const text = await response.text();
     console.log("[Medicine] Create response:", response.status, text);
-    try { res.status(response.status).json(JSON.parse(text)); }
-    catch { res.status(response.status).json({ result: text }); }
+
+    if (!response.ok) {
+      try { return res.status(response.status).json(JSON.parse(text)); }
+      catch { return res.status(response.status).json({ result: text }); }
+    }
+
+    let result;
+    try { result = JSON.parse(text); } catch { result = { result: text }; }
+    const medicineId = result.MedicineId;
+
+    // Add schedule entries for remaining days
+    if (medicineId && days.length > 1) {
+      const reminderTime = payload.ReminderTime;
+      for (const day of days.slice(1)) {
+        try {
+          console.log(`[Medicine] Adding schedule: MedicineId=${medicineId}, Day=${day}`);
+          await fetch(`${MEDICINE_BASE_URL}/schedule/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ MedicineId: medicineId, Day: day, ReminderTime: reminderTime }),
+          });
+        } catch (err) {
+          console.error(`[Medicine] Schedule add failed for ${day}:`, err.message);
+        }
+      }
+    }
+
+    res.json(result);
   } catch (e) {
     console.error("[Medicine] Create failed:", e.message);
     res.status(503).json({ error: e.message });
@@ -96,7 +132,10 @@ app.put("/medicine/update", async (req, res) => {
       Instructions: String(req.body.Instructions || ""),
       IsActive: req.body.IsActive !== undefined ? req.body.IsActive : true,
     };
-    if (req.body.Day !== undefined) payload.Day = String(req.body.Day);
+    if (req.body.Day !== undefined) {
+      const days = String(req.body.Day).split(",").map(d => toFullDay(d.trim())).filter(Boolean);
+      payload.Day = days[0] || "";
+    }
     if (req.body.ReminderTime !== undefined) payload.ReminderTime = String(req.body.ReminderTime);
     if (req.body.Quantity !== undefined) payload.Quantity = Number(req.body.Quantity);
     console.log("[Medicine] Updating:", JSON.stringify(payload));

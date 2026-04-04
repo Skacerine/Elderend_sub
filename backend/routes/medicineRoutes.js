@@ -94,7 +94,7 @@ router.post("/create", async (req, res) => {
       Id: 0, // OutSystems will assign real ID
       Name: String(req.body.Name || ""),
       ElderlyId: Number(req.body.ElderlyId) || 1,
-      ReminderTime: String(req.body.ReminderTime || "08:00:00"),
+      ReminderTime: String(req.body.ReminderTime || "08:00:00").split(":").length === 2 ? String(req.body.ReminderTime) + ":00" : String(req.body.ReminderTime || "08:00:00"),
       Quantity: Number(req.body.Quantity) || 0,
       Dose: Number(req.body.Dose) || 1,
       Instructions: String(req.body.Instructions || ""),
@@ -175,7 +175,7 @@ router.post("/schedule", async (req, res) => {
     const payload = {
       MedicineId: Number(req.body.MedicineId),
       Day: String(req.body.Day),
-      ReminderTime: String(req.body.ReminderTime)
+      ReminderTime: String(req.body.ReminderTime || "08:00:00").split(":").length === 2 ? String(req.body.ReminderTime) + ":00" : String(req.body.ReminderTime || "08:00:00")
     };
     console.log("[Medicine] Adding schedule:", JSON.stringify(payload));
     const response = await fetch(`${MEDICINE_BASE_URL}/schedule/`, {

@@ -30,8 +30,8 @@ export default function App() {
   const [clock, setClock] = useState(fmtClock());
 
   const { user, logout } = useAuth();
-  const elderlyId = user?.elderlyId || 1;
-  const guardianId = 1;
+  const elderlyId = user?.elderlyId;
+  const guardianId = user?.guardianId;
   const deviceId = "PHONE_01";
   const ELDERLY_ID = elderlyId;
 

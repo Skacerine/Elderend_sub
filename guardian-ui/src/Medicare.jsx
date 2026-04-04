@@ -75,7 +75,7 @@ function getMonthGrid(year, month) {
 
 export default function Medicare() {
   const { user } = useAuth();
-  const ELDERLY_ID = user?.elderlyId || 1;
+  const ELDERLY_ID = user?.elderlyId;
   const [meds, setMeds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

@@ -93,7 +93,7 @@ router.post("/create", async (req, res) => {
     const payload = {
       Id: 0, // OutSystems will assign real ID
       Name: String(req.body.Name || ""),
-      ElderlyId: Number(req.body.ElderlyId) || 1,
+      ElderlyId: Number(req.body.ElderlyId),
       ReminderTime: String(req.body.ReminderTime || "08:00:00").split(":").length === 2 ? String(req.body.ReminderTime) + ":00" : String(req.body.ReminderTime || "08:00:00"),
       Quantity: Number(req.body.Quantity) || 0,
       Dose: Number(req.body.Dose) || 1,
@@ -123,7 +123,7 @@ router.put("/update", async (req, res) => {
     const payload = {
       Id: Number(req.body.Id),
       Name: String(req.body.Name || ""),
-      ElderlyId: Number(req.body.ElderlyId) || 1,
+      ElderlyId: Number(req.body.ElderlyId),
       Dose: Number(req.body.Dose) || 1,
       Instructions: String(req.body.Instructions || ""),
       IsActive: req.body.IsActive !== undefined ? req.body.IsActive : true

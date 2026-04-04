@@ -30,7 +30,7 @@ async function post(url, body = {}) {
 
 export default function ElderWatchDev() {
   const { user } = useAuth();
-  const ELDERLY_ID = user?.elderlyId || 1;
+  const ELDERLY_ID = user?.elderlyId;
   const guardianLabel = user?.name || `Guardian #${user?.guardianId || "—"}`;
   const elderlyLabel = `Elderly #${ELDERLY_ID}`;
   const mapRef = useRef(null);
@@ -114,7 +114,7 @@ export default function ElderWatchDev() {
 
   // Sync elderly ID to backend GPS simulation on mount
   useEffect(() => {
-    post("/gps/config", { elderlyId: ELDERLY_ID, guardianId: user?.guardianId || 1 });
+    post("/gps/config", { elderlyId: ELDERLY_ID, guardianId: user?.guardianId });
   }, [ELDERLY_ID]);
 
   // Fetch coordinate history

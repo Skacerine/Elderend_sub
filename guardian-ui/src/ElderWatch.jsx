@@ -35,7 +35,7 @@ async function post(url, body = {}) {
 
 export default function ElderWatch() {
   const { user } = useAuth();
-  const ELDERLY_ID = user?.elderlyId || 1;
+  const ELDERLY_ID = user?.elderlyId;
   const guardianLabel = user?.name || `Guardian #${user?.guardianId || "—"}`;
   const elderlyLabel = `Elderly #${ELDERLY_ID}`;
   const mapRef = useRef(null);
@@ -125,7 +125,7 @@ export default function ElderWatch() {
 
   // Sync config to backend when mode changes
   useEffect(() => {
-    post("/gps/config", { mode, elderlyId: ELDERLY_ID, guardianId: user?.guardianId || 1 });
+    post("/gps/config", { mode, elderlyId: ELDERLY_ID, guardianId: user?.guardianId });
   }, [mode, ELDERLY_ID]);
 
   // Simulated GPS tracking — gentle random walk near home

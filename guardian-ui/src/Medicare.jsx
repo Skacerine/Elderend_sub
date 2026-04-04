@@ -38,15 +38,16 @@ function dayIndexesToStr(indices) {
   return indices.map(i => DAYS[i]).join(",");
 }
 
-// Get schedule days: from Schedule array first, then Day field, then local state, then default all days
+// Get schedule days: local state first (user's latest clicks), then Schedule array, then Day field, then default all days
 function getMedDays(med, scheduleMap) {
+  const key = `${med.Name}_${med.ReminderTime}`;
+  if (scheduleMap[key]) return scheduleMap[key];
   if (med.Schedule && med.Schedule.length > 0) {
     return med.Schedule.map(s => DAYS.indexOf(s.Day)).filter(i => i >= 0);
   }
   const fromApi = parseDayField(med.Day);
   if (fromApi && fromApi.length > 0) return fromApi;
-  const key = `${med.Name}_${med.ReminderTime}`;
-  return scheduleMap[key] || [0, 1, 2, 3, 4, 5, 6];
+  return [0, 1, 2, 3, 4, 5, 6];
 }
 
 function getRestockSchedule(meds) {
@@ -90,7 +91,17 @@ export default function Medicare() {
   const [addStatus, setAddStatus] = useState(null);
   const [restockMed, setRestockMed] = useState(null);
   const [restockAmt, setRestockAmt] = useState(0);
-  const [scheduleMap, setScheduleMap] = useState({}); // medKey → dayIndex[]
+  const [scheduleMap, setScheduleMapRaw] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("mc_scheduleMap") || "{}"); } catch { return {}; }
+  });
+  // Wrap setScheduleMap to persist to localStorage
+  const setScheduleMap = (updater) => {
+    setScheduleMapRaw(prev => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      localStorage.setItem("mc_scheduleMap", JSON.stringify(next));
+      return next;
+    });
+  };
   const [popupAlert, setPopupAlert] = useState(null);
 
   const loadData = useCallback(async () => {
@@ -106,13 +117,15 @@ export default function Medicare() {
       }));
       if (ELDERLY_ID) arr = arr.filter(m => !m.ElderlyId || String(m.ElderlyId) === String(ELDERLY_ID));
       const active = arr.filter(m => m.IsActive === true || m.IsActive === 1 || m.IsActive === "true" || m.IsActive === "1");
-      setMeds(active);
-      // Rebuild scheduleMap from API Schedule arrays so local state stays in sync
+      // Only update meds if API returned actual data — don't wipe local optimistic state with empty array
+      setMeds(prev => active.length > 0 ? active : prev);
+      // Seed scheduleMap from API Schedule arrays — but only for medicines that don't already
+      // have a local entry (user toggles take priority over stale API data)
       setScheduleMap(prev => {
         const next = { ...prev };
         active.forEach(m => {
           const key = `${m.Name}_${m.ReminderTime}`;
-          if (m.Schedule && m.Schedule.length > 0) {
+          if (!next[key] && m.Schedule && m.Schedule.length > 0) {
             next[key] = m.Schedule.map(s => DAYS.indexOf(s.Day)).filter(i => i >= 0);
           }
         });
@@ -168,9 +181,26 @@ export default function Medicare() {
       );
       await Promise.all(schedulePromises);
 
+      // Optimistically add the new medicine to local state so it shows immediately.
+      // The OutSystems GET endpoints may be slow or broken, so we can't rely on loadData alone.
+      const newMed = {
+        Id: medId, Name: addForm.Name, ElderlyId: ELDERLY_ID,
+        ReminderTime: addForm.ReminderTime, Stock: addForm.Stock, Quantity: addForm.Stock,
+        Dose: addForm.Dose, Instructions: addForm.Instructions, IsActive: true,
+        Day: firstDay,
+        Schedule: addForm.days.map(dayIdx => ({ Day: DAYS[dayIdx], ReminderTime: addForm.ReminderTime }))
+      };
+      setMeds(prev => [...prev, newMed]);
+
       const key = `${addForm.Name}_${addForm.ReminderTime}`;
       setScheduleMap(prev => ({ ...prev, [key]: addForm.days }));
-      setAddStatus({ ok: true }); setAddForm({ Name: "", ReminderTime: "08:00:00", Stock: 30, Dose: 1, Instructions: "", days: [0, 1, 2, 3, 4, 5, 6] }); setShowAdd(false); loadData();
+      setAddStatus({ ok: true }); setAddForm({ Name: "", ReminderTime: "08:00:00", Stock: 30, Dose: 1, Instructions: "", days: [0, 1, 2, 3, 4, 5, 6] }); setShowAdd(false);
+
+      // Try loadData but don't let it erase our optimistic state if API returns empty
+      const freshData = ELDERLY_ID ? await get(`/medicine/${ELDERLY_ID}`) : null;
+      if (freshData && Array.isArray(freshData) && freshData.length > 0) {
+        loadData(); // API returned real data, safe to refresh
+      }
     } catch (err) { setAddStatus({ ok: false, msg: err.message }); }
     setTimeout(() => setAddStatus(null), 4000);
   }
@@ -179,28 +209,43 @@ export default function Medicare() {
     const newStock = Math.max(0, (Number(med.Stock) || 0) + delta);
     try {
       await api("PUT", "/medicine/stock", { MedicineId: med.Id, Quantity: newStock });
-      setRestockMed(null); setRestockAmt(0); loadData();
+      // Optimistically update local state
+      setMeds(prev => prev.map(m => m.Id === med.Id ? { ...m, Stock: newStock, Quantity: newStock } : m));
+      setRestockMed(null); setRestockAmt(0);
     } catch (err) { alert("Failed: " + err.message); }
   }
 
   async function handleDelete(med) {
     if (!confirm(`Remove ${med.Name}?`)) return;
-    try { await api("PUT", "/medicine/update", { Id: med.Id, Name: med.Name, ElderlyId: ELDERLY_ID, Dose: Number(med.Dose) || 1, Instructions: med.Instructions || "", IsActive: false }); loadData(); }
-    catch (err) { alert("Failed: " + err.message); }
+    try {
+      await api("PUT", "/medicine/update", { Id: med.Id, Name: med.Name, ElderlyId: ELDERLY_ID, Dose: Number(med.Dose) || 1, Instructions: med.Instructions || "", IsActive: false });
+      // Optimistically remove from local state
+      setMeds(prev => prev.filter(m => m.Id !== med.Id));
+    } catch (err) { alert("Failed: " + err.message); }
   }
 
   function toggleScheduleDay(med, dayIdx) {
     const key = `${med.Name}_${med.ReminderTime}`;
     const current = getMedDays(med, scheduleMap);
-    const updated = current.includes(dayIdx) ? current.filter(d => d !== dayIdx) : [...current, dayIdx].sort();
+    const adding = !current.includes(dayIdx);
+    const updated = adding ? [...current, dayIdx].sort() : current.filter(d => d !== dayIdx);
     setScheduleMap(prev => ({ ...prev, [key]: updated }));
-    // Sync to OutSystems including the Day field
+
+    // Sync to OutSystems: add schedule entry for new day, update Day field for removals
+    if (adding && med.Id) {
+      api("POST", "/medicine/schedule", {
+        MedicineId: med.Id, Day: DAYS[dayIdx], ReminderTime: med.ReminderTime || "08:00:00"
+      }).catch(() => { });
+    }
+    // Always update the Day field (OutSystems uses this as fallback)
     api("PUT", "/medicine/update", {
       Id: med.Id, Name: med.Name, ElderlyId: ELDERLY_ID,
       Dose: Number(med.Dose) || 1,
       Instructions: med.Instructions || "", IsActive: true,
       Day: dayIndexesToStr(updated)
-    }).then(() => loadData()).catch(() => { });
+    }).catch(() => { });
+    // Don't call loadData() immediately — let the 30s auto-refresh pick up changes
+    // so local scheduleMap state isn't overwritten by stale API data
   }
 
   // ── Derived ──

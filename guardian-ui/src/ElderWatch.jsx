@@ -5,7 +5,33 @@ import AlertPopup from "./AlertPopup";
 import { connectToAlerts } from "./socket";
 import { useAuth } from "./AuthContext";
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 const HOME = { lat: 1.35305, lng: 103.94402 };
+
+const TRACKING_MODES = [
+  { id: "standard", name: "Standard", desc: "Updates every 5 min", interval: 300000 },
+  { id: "always-on", name: "Always-On", desc: "Updates every 2 sec", interval: 2000 },
+  { id: "on-demand", name: "On-Demand", desc: "Manual refresh only", interval: null }
+];
+
+async function get(url) {
+  try {
+    const r = await fetch(`${API_BASE}${url}`, { signal: AbortSignal.timeout(6000) });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+async function post(url, body = {}) {
+  try {
+    const r = await fetch(`${API_BASE}${url}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(8000)
+    });
+    return r.json();
+  } catch { return null; }
+}
 
 export default function ElderWatch() {
   const { user } = useAuth();
@@ -19,9 +45,11 @@ export default function ElderWatch() {
   const trailData = useRef([]);
   const simPos = useRef({ lat: HOME.lat, lng: HOME.lng });
 
+  const [mode, setMode] = useState("standard");
   const [statusText, setStatusText] = useState("Home");
   const [distance, setDistance] = useState(0);
   const [lastUpdate, setLastUpdate] = useState(null);
+  const [addressData, setAddressData] = useState(null);
   const [alerts, setAlerts] = useState([]);
   const [toasts, setToasts] = useState([]);
   const [popupAlert, setPopupAlert] = useState(null);
@@ -74,17 +102,44 @@ export default function ElderWatch() {
     return () => { map.remove(); mapInstance.current = null; };
   }, []);
 
+  // Fetch status service data
+  const fetchStatus = useCallback(async () => {
+    const s = await get(`/status/${ELDERLY_ID}`);
+    if (s && !s.error) setAddressData(s);
+  }, [ELDERLY_ID]);
+
+  // Fetch alerts from backend
+  const fetchAlerts = useCallback(async () => {
+    const d = await get("/alerts");
+    if (Array.isArray(d) && d.length > 0) {
+      setAlerts(prev => {
+        // Only toast if there's a genuinely new alert
+        if (d[0]._id && (!prev.length || d[0]._id !== prev[0]?._id)) {
+          const a = d[0];
+          showToast(a.type, a.type === "left" ? "Left Home Zone" : "Returned Home", a.address || "");
+        }
+        return d;
+      });
+    }
+  }, [showToast]);
+
+  // Sync config to backend when mode changes
+  useEffect(() => {
+    post("/gps/config", { mode, elderlyId: ELDERLY_ID, guardianId: user?.guardianId || 1 });
+  }, [mode, ELDERLY_ID]);
+
   // Simulated GPS tracking — gentle random walk near home
   useEffect(() => {
+    const currentMode = TRACKING_MODES.find(m => m.id === mode);
+    if (!currentMode?.interval) return; // on-demand = no auto updates
+
     const interval = setInterval(() => {
       const pos = simPos.current;
-      // Small random drift to simulate real GPS movement
       const dLat = (Math.random() - 0.48) * 0.0004;
       const dLng = (Math.random() - 0.48) * 0.0004;
       let newLat = pos.lat + dLat;
       let newLng = pos.lng + dLng;
 
-      // Gently pull back toward home if drifting too far (keep within ~400m most of the time)
       const dist = haversine(HOME.lat, HOME.lng, newLat, newLng);
       if (dist > 350) {
         newLat += (HOME.lat - newLat) * 0.15;
@@ -100,7 +155,6 @@ export default function ElderWatch() {
       setDistance(currentDist);
       setLastUpdate(new Date().toISOString());
 
-      // Update marker
       if (markerRef.current) {
         markerRef.current.setLatLng([newLat, newLng]);
         markerRef.current.setPopupContent(
@@ -108,7 +162,6 @@ export default function ElderWatch() {
         );
       }
 
-      // Trail
       trailData.current.push([newLat, newLng]);
       if (trailData.current.length > 50) trailData.current.shift();
       if (trailRef.current && mapInstance.current) mapInstance.current.removeLayer(trailRef.current);
@@ -116,7 +169,6 @@ export default function ElderWatch() {
         trailRef.current = L.polyline(trailData.current, { color: "#3b82f6", weight: 2, opacity: 0.4, dashArray: "5 4" }).addTo(mapInstance.current);
       }
 
-      // Generate alert if boundary crossed
       if (prevStatus === "Home" && !isHome) {
         const alert = { id: Date.now(), type: "left", time: new Date().toISOString(), distance: currentDist };
         setAlerts(prev => [alert, ...prev].slice(0, 20));
@@ -126,10 +178,19 @@ export default function ElderWatch() {
         setAlerts(prev => [alert, ...prev].slice(0, 20));
         showToast("entered", "Returned Home", "Back within safe zone");
       }
-    }, 3000);
+    }, Math.min(currentMode.interval, 3000)); // cap at 3s for simulation smoothness
 
     return () => clearInterval(interval);
-  }, [statusText, showToast]);
+  }, [mode, statusText, showToast]);
+
+  // Poll status service + alerts
+  useEffect(() => {
+    fetchStatus();
+    fetchAlerts();
+    const t1 = setInterval(fetchStatus, 10000);
+    const t2 = setInterval(fetchAlerts, 5000);
+    return () => { clearInterval(t1); clearInterval(t2); };
+  }, [fetchStatus, fetchAlerts]);
 
   // WebSocket listener for fall detection alerts
   useEffect(() => {
@@ -151,8 +212,24 @@ export default function ElderWatch() {
     return () => ws.close();
   }, []);
 
+  // On-demand fetch
+  async function handleOnDemandFetch() {
+    await post("/gps/devicegps/push");
+    const d = await get(`/drawmap/${ELDERLY_ID}`);
+    if (d && !d.error && markerRef.current) {
+      markerRef.current.setLatLng([d.lat, d.lng]);
+      simPos.current = { lat: d.lat, lng: d.lng };
+      setStatusText(d.status === "Home" ? "Home" : "Outside");
+      setDistance(d.distance || 0);
+      setLastUpdate(new Date().toISOString());
+    }
+    await fetchStatus();
+    showToast("info", "Location Updated", "On-demand fetch complete");
+  }
+
   const isHome = statusText === "Home";
   const fmtTime = (ts) => ts ? new Date(ts).toLocaleTimeString("en-SG", { hour12: false }) : "-";
+  const currentMode = TRACKING_MODES.find(m => m.id === mode);
 
   return (
     <div className="ew-app">
@@ -170,6 +247,7 @@ export default function ElderWatch() {
       <div className="ew-header">
         <div className="ew-logo">ElderWatch</div>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+          <span className="ew-badge ew-badge--blue">{currentMode?.name || "Standard"}</span>
           <span className={`ew-badge ${isHome ? "ew-badge--green" : "ew-badge--red"}`}>
             {isHome ? "HOME" : "OUTSIDE"}
           </span>
@@ -213,9 +291,46 @@ export default function ElderWatch() {
             )}
           </div>
 
+          {/* Status Service */}
+          <div className="ew-card">
+            <div className="ew-card-label">STATUS SERVICE</div>
+            <div style={{ fontSize: "0.8rem", color: "var(--muted)", lineHeight: 1.5, marginBottom: 6 }}>
+              {addressData?.address || "Fetching location..."}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", fontFamily: "var(--font-mono)" }}>
+              <span style={{ color: "var(--cyan)" }}>{addressData?.lastSeenAge || "-"}</span>
+              <span style={{ color: addressData?.isSafe ? "var(--green)" : addressData ? "var(--red)" : "var(--muted-2)" }}>
+                {addressData?.isSafe ? "Safe" : addressData ? "Outside zone" : "-"}
+              </span>
+            </div>
+            {addressData?.distanceLabel && (
+              <div style={{ fontSize: "0.7rem", color: "var(--muted-2)", marginTop: 4 }}>
+                Distance: {addressData.distanceLabel}
+              </div>
+            )}
+          </div>
+
+          {/* Tracking Mode */}
+          <div className="ew-card">
+            <div className="ew-card-label">TRACKING MODE</div>
+            {TRACKING_MODES.map(m => (
+              <div key={m.id} className={`ew-mode-btn ${mode === m.id ? "ew-mode-btn--active" : ""}`} onClick={() => setMode(m.id)}>
+                <div>
+                  <div className="ew-mode-name">{m.name}</div>
+                  <div className="ew-mode-sub">{m.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
           {/* Quick actions */}
           <div className="ew-card">
-            <div className="ew-card-label">Quick Actions</div>
+            <div className="ew-card-label">QUICK ACTIONS</div>
+            {mode === "on-demand" && (
+              <button className="ew-btn ew-btn--primary" style={{ width: "100%", marginBottom: 4 }} onClick={handleOnDemandFetch}>
+                Fetch Location Now
+              </button>
+            )}
             <button className="ew-btn" style={{ width: "100%", marginBottom: 4 }} onClick={() => alert(`Calling ${elderlyLabel}...\n(Simulated)`)}>
               Call Elderly
             </button>
@@ -232,14 +347,14 @@ export default function ElderWatch() {
                 <div style={{ fontSize: "0.75rem", color: "var(--muted-2)", padding: "8px 0" }}>
                   No alerts yet. You'll be notified if they leave the safe zone.
                 </div>
-              ) : alerts.map((a) => (
-                <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", borderBottom: "1px solid var(--border)" }}>
+              ) : alerts.slice(0, 20).map((a, i) => (
+                <div key={a.id || a._id || i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", borderBottom: "1px solid var(--border)" }}>
                   <div style={{ fontSize: "1rem" }}>{a.type === "left" ? "\u{1f6a8}" : "\u2705"}</div>
                   <div style={{ flex: 1, fontSize: "0.7rem" }}>
                     <div style={{ fontWeight: 700, color: a.type === "left" ? "var(--red)" : "var(--green)" }}>
                       {a.type === "left" ? "Left home zone" : "Returned home"}
                     </div>
-                    <div style={{ color: "var(--muted-2)" }}>{fmtTime(a.time)}</div>
+                    <div style={{ color: "var(--muted-2)" }}>{fmtTime(a.time || a.timestamp)}</div>
                   </div>
                 </div>
               ))}

@@ -171,9 +171,9 @@ export default function GuardianDashboardDev() {
             <div className="brand-left">
               <div className="brand-mark">🛡️</div>
               <div>
-                <div className="brand-title">ElderWatch Guardian Console</div>
+                <div className="brand-title">Guardian Console (Dev)</div>
                 <div className="brand-subtitle">
-                  Real-time fall monitoring, alert coordination, and guardian response control
+                  Fall monitoring &middot; Alert coordination &middot; Response control
                 </div>
               </div>
             </div>
@@ -194,17 +194,17 @@ export default function GuardianDashboardDev() {
             <div className="metric-card">
               <div className="metric-label">Connection</div>
               <div className="metric-value">{connectionLabel}</div>
-              <div className="metric-foot">WebSocket alert stream</div>
+              <div className="metric-foot">Live alert stream</div>
             </div>
             <div className="metric-card">
               <div className="metric-label">Alert Sound</div>
               <div className="metric-value">{audioEnabled ? "Enabled" : "Locked"}</div>
-              <div className="metric-foot">Browser audio permission</div>
+              <div className="metric-foot">Sound notification</div>
             </div>
             <div className="metric-card">
               <div className="metric-label">Total Alerts</div>
               <div className="metric-value">{totalAlerts}</div>
-              <div className="metric-foot">Last 20 retained events</div>
+              <div className="metric-foot">Recent alerts received</div>
             </div>
           </div>
 
@@ -216,7 +216,7 @@ export default function GuardianDashboardDev() {
               </div>
               <div className="status-pill">
                 <span className="status-dot status-dot--cyan" />
-                Score threshold: 100
+                Threshold: 100
               </div>
             </div>
 
@@ -234,79 +234,87 @@ export default function GuardianDashboardDev() {
         </div>
 
         <div className="guardian-grid">
+          {/* Left sidebar — controls */}
           <div className="guardian-sidebar">
             <div className="panel">
               <div className="panel-header">
                 <div className="panel-kicker">Guardian</div>
                 <div className="panel-title">Response Controls</div>
-                <div className="panel-subtitle">
-                  Keep the dashboard armed, audible, and ready to respond.
-                </div>
               </div>
               <div className="panel-body">
                 <div className="guardian-section">
                   <div className="info-card">
-                    <div className="info-title">Assigned Guardian</div>
                     <div className="person-card">
                       <div className="avatar">
                         {user?.name ? user.name.trim().slice(0, 2).toUpperCase() : "??"}
                       </div>
                       <div>
                         <div className="person-name">{user?.name || "Unknown Guardian"}</div>
-                        <div className="person-id">guardian-{user?.guardianId || "—"}</div>
+                        <div className="person-id">ID: {user?.guardianId || "—"}</div>
                       </div>
                     </div>
                   </div>
 
                   <div className="stack">
                     <button className="control-button control-button--primary" onClick={handleEnableAudio}>
-                      {audioEnabled ? "🔊 Alert Sound Enabled" : "🔇 Click to Enable Sound"}
+                      {audioEnabled ? "🔊 Sound Enabled" : "🔇 Enable Sound"}
                     </button>
                     <button className="control-button" onClick={testAlarmNow}>
-                      Test Alarm Sound
+                      Test Alarm
                     </button>
                     <button className="control-button control-button--danger" onClick={handleStopAlarm}>
                       Stop Alarm
                     </button>
                     <button className="control-button control-button--ghost" onClick={clearActiveAlert}>
-                      Clear Active Alert
+                      Clear Alert
                     </button>
                   </div>
 
                   <div className="control-help">
-                    The guardian dashboard requires a one-time user interaction to unlock browser audio.
-                    Once enabled, new live alerts will ring automatically.
+                    Enable sound so alerts ring automatically. Browser requires one-time click to unlock audio.
                   </div>
                 </div>
               </div>
             </div>
 
+            {/* Incident details — moved from right sidebar */}
             <div className="panel">
               <div className="panel-header">
-                <div className="panel-kicker">System Notes</div>
-                <div className="panel-title">Operational Guidance</div>
+                <div className="panel-kicker">Incident</div>
+                <div className="panel-title">Motion Data</div>
               </div>
               <div className="panel-body">
-                <div className="stack">
-                  <div className="info-card">
-                    <div className="info-title">When to act</div>
-                    <div className="footer-note">
-                      A rising score usually reflects a suspicious sequence such as drop, impact,
-                      rotation, and stillness. Alerts should be reviewed immediately, call your elderly!
-                    </div>
+                <div className="details-grid">
+                  <div className="detail-row">
+                    <div className="detail-key">Device</div>
+                    <div className="detail-value">{deviceId}</div>
                   </div>
-                  <div className="info-card">
-                    <div className="info-title">Threshold tuning</div>
-                    <div className="footer-note">
-                      The backend currently rings only at score 100 and above to reduce false alarms
-                      from normal handling of phones.
-                    </div>
+                  <div className="detail-row">
+                    <div className="detail-key">Received</div>
+                    <div className="detail-value">{formatTimestamp(activeAlert?.receivedAt)}</div>
+                  </div>
+                  <div className="detail-row">
+                    <div className="detail-key">Min Accel</div>
+                    <div className="detail-value">{formatValue(features.minAcceleration)}</div>
+                  </div>
+                  <div className="detail-row">
+                    <div className="detail-key">Peak Accel</div>
+                    <div className="detail-value">{formatValue(features.peakAcceleration)}</div>
+                  </div>
+                  <div className="detail-row">
+                    <div className="detail-key">Peak Rotation</div>
+                    <div className="detail-value">{formatValue(features.peakRotationRate)}</div>
+                  </div>
+                  <div className="detail-row">
+                    <div className="detail-key">Stillness</div>
+                    <div className="detail-value">{formatValue(features.postImpactStillnessMs)} ms</div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
+          {/* Main content */}
           <div className="guardian-main">
             <div className={`hero-alert ${activeAlert ? "hero-alert--danger" : ""}`}>
               <div className="hero-row">
@@ -325,21 +333,21 @@ export default function GuardianDashboardDev() {
 
               <div className="hero-copy">
                 {activeAlert
-                  ? "A suspicious motion event crossed the configured risk threshold. Review the score, device details, and motion features below, then decide whether guardian intervention is needed."
-                  : "The system is connected and listening for live drop alerts from the elderly phone app. No active emergency is currently being processed."}
+                  ? "Suspicious motion crossed the risk threshold. Review details and decide if intervention is needed."
+                  : "System connected and listening for alerts. No active emergency."}
               </div>
 
               <div className="hero-stats">
                 <div className="stat-tile">
-                  <div className="stat-name">Incident ID</div>
+                  <div className="stat-name">Incident</div>
                   <div className="stat-value">{incidentId}</div>
                 </div>
                 <div className="stat-tile">
-                  <div className="stat-name">Elderly ID</div>
+                  <div className="stat-name">Elderly</div>
                   <div className="stat-value">{elderlyId}</div>
                 </div>
                 <div className="stat-tile">
-                  <div className="stat-name">Risk Score</div>
+                  <div className="stat-name">Score</div>
                   <div className="stat-value">{formatValue(score)}</div>
                 </div>
                 <div className="stat-tile">
@@ -350,30 +358,28 @@ export default function GuardianDashboardDev() {
 
               <div className="hero-actions">
                 <button className="control-button control-button--primary" onClick={testAlarmNow}>
-                  Re-test Alert Sound
+                  Re-test Sound
                 </button>
                 <button className="control-button" onClick={handleStopAlarm}>
-                  Silence Alarm
+                  Silence
                 </button>
                 <button className="control-button control-button--ghost" onClick={clearActiveAlert}>
-                  Dismiss Incident Card
+                  Dismiss
                 </button>
               </div>
             </div>
 
+            {/* Activity panels side by side */}
             <div className="activity-grid">
               <div className="panel">
                 <div className="panel-header">
-                  <div className="panel-kicker">Event Stream</div>
-                  <div className="panel-title">Recent System Activity</div>
-                  <div className="panel-subtitle">
-                    Latest websocket messages, alerts, and system notices.
-                  </div>
+                  <div className="panel-kicker">Events</div>
+                  <div className="panel-title">Activity Log</div>
                 </div>
                 <div className="panel-body">
                   {latestLogs.length === 0 ? (
                     <div className="alert-empty">
-                      No activity yet. Once the phone sends a suspicious motion event, it will appear here.
+                      No activity yet. Alerts will appear here when the phone detects suspicious motion.
                     </div>
                   ) : (
                     <div className="log-list">
@@ -388,8 +394,8 @@ export default function GuardianDashboardDev() {
                           </div>
                           <div className="log-body">
                             {msg.type === "drop_alert"
-                              ? "High-priority alert broadcast received from backend incident service."
-                              : "System message captured by guardian websocket client."}
+                              ? `Fall alert — score: ${formatValue(msg.data?.score || msg.incident?.score)}, severity: ${msg.data?.severity || msg.incident?.severity || "—"}`
+                              : "System message received"}
                           </div>
                         </div>
                       ))}
@@ -400,83 +406,43 @@ export default function GuardianDashboardDev() {
 
               <div className="panel">
                 <div className="panel-header">
-                  <div className="panel-kicker">Live Payload</div>
-                  <div className="panel-title">Alert JSON</div>
-                  <div className="panel-subtitle">
-                    Raw incident data for debugging, validation, and grading visibility.
-                  </div>
+                  <div className="panel-kicker">Debug</div>
+                  <div className="panel-title">Raw Payload</div>
                 </div>
                 <div className="panel-body">
                   <pre className="json-block">
-                    {JSON.stringify(activeAlert?.data || activeAlert || { message: "Waiting for live alert..." }, null, 2)}
+                    {JSON.stringify(activeAlert?.data || activeAlert || { message: "Waiting for alert..." }, null, 2)}
                   </pre>
                 </div>
               </div>
             </div>
           </div>
 
+          {/* Right sidebar — interpretation & notes */}
           <div className="guardian-right">
             <div className="panel">
               <div className="panel-header">
-                <div className="panel-kicker">Incident Details</div>
-                <div className="panel-title">Motion Summary</div>
-                <div className="panel-subtitle">
-                  Current target state, scoring details, and captured sensor features.
-                </div>
-              </div>
-              <div className="panel-body">
-                <div className="details-grid">
-                  <div className="detail-row">
-                    <div className="detail-key">Device</div>
-                    <div className="detail-value">{deviceId}</div>
-                  </div>
-                  <div className="detail-row">
-                    <div className="detail-key">Received</div>
-                    <div className="detail-value">{formatTimestamp(activeAlert?.receivedAt)}</div>
-                  </div>
-                  <div className="detail-row">
-                    <div className="detail-key">Min Acceleration</div>
-                    <div className="detail-value">{formatValue(features.minAcceleration)}</div>
-                  </div>
-                  <div className="detail-row">
-                    <div className="detail-key">Peak Acceleration</div>
-                    <div className="detail-value">{formatValue(features.peakAcceleration)}</div>
-                  </div>
-                  <div className="detail-row">
-                    <div className="detail-key">Peak Rotation</div>
-                    <div className="detail-value">{formatValue(features.peakRotationRate)}</div>
-                  </div>
-                  <div className="detail-row">
-                    <div className="detail-key">Post-impact Stillness</div>
-                    <div className="detail-value">{formatValue(features.postImpactStillnessMs)} ms</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="panel">
-              <div className="panel-header">
-                <div className="panel-kicker">Guardian Interpretation</div>
-                <div className="panel-title">What to Look For</div>
+                <div className="panel-kicker">Guide</div>
+                <div className="panel-title">Scoring Reference</div>
               </div>
               <div className="panel-body">
                 <div className="stack">
                   <div className="info-card">
-                    <div className="info-title">High score usually means</div>
+                    <div className="info-title">Score interpretation</div>
                     <div className="footer-note">
-                      A strong sequence of suspicious motion indicators, not just one isolated movement.
+                      &lt; 65 = At rest &middot; 65-99 = Normal activity &middot; 100+ = Possible fall
                     </div>
                   </div>
                   <div className="info-card">
-                    <div className="info-title">Stillness is contextual</div>
+                    <div className="info-title">Key indicators</div>
                     <div className="footer-note">
-                      Stillness is more meaningful after impact-like motion. A phone resting quietly should not be treated as a fall on its own.
+                      High score = drop + impact + rotation + stillness sequence. Post-impact stillness is only meaningful after impact-like motion.
                     </div>
                   </div>
                   <div className="info-card">
-                    <div className="info-title">Guardian action</div>
+                    <div className="info-title">Response</div>
                     <div className="footer-note">
-                      Use this console as an early warning tool. Verify with the elderly person if possible before escalating.
+                      Use as early warning. Verify with elderly before escalating. Threshold at 100 to reduce false positives.
                     </div>
                   </div>
                 </div>

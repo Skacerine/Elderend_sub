@@ -95,11 +95,21 @@ export default function App() {
   }
 
   // Filter to only show medicines scheduled for today
-  const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const DAYS_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const DAYS_FULL = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
   const todayIdx = (() => { const d = new Date().getDay(); return d === 0 ? 6 : d - 1; })(); // 0=Mon..6=Sun
   const todayMeds = meds.filter(m => {
+    // Check Schedule array first (OutSystems returns per-day schedule entries)
+    if (m.Schedule && m.Schedule.length > 0) {
+      const scheduledDays = m.Schedule.map(s => DAYS_FULL.indexOf(s.Day)).filter(i => i >= 0);
+      return scheduledDays.includes(todayIdx);
+    }
+    // Fall back to Day field
     if (!m.Day || m.Day === "0" || m.Day === "") return true; // no schedule set = every day
-    const scheduled = m.Day.split(",").map(d => DAYS.indexOf(d.trim())).filter(i => i >= 0);
+    const scheduled = m.Day.split(",").map(d => {
+      const idx = DAYS_FULL.indexOf(d.trim()); // try full name first (Monday)
+      return idx >= 0 ? idx : DAYS_ABBR.indexOf(d.trim()); // fall back to abbreviation (Mon)
+    }).filter(i => i >= 0);
     return scheduled.length === 0 || scheduled.includes(todayIdx);
   });
   const sortedMeds = [...todayMeds].sort((a, b) => (a.ReminderTime || "").localeCompare(b.ReminderTime || ""));

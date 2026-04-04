@@ -1,7 +1,7 @@
 import express from "express";
 import { sendFallAlertSMS, sendFallAlertEmail } from "../services/notificationService.js";
 
-const MEDICINE_BASE_URL = "https://personal-s93qqbah.outsystemscloud.com/ManageMedicine/rest/Medicine";
+const MEDICINE_BASE_URL = "https://personal-s93qqbah.outsystemscloud.com/Medicine/rest/Medicine";
 
 const router = express.Router();
 

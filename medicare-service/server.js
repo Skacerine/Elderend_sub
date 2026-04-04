@@ -5,7 +5,7 @@ const app = express();
 const PORT = process.env.PORT || 4001;
 
 const MEDICINE_BASE_URL =
-  "https://personal-s93qqbah.outsystemscloud.com/ManageMedicine/rest/Medicine";
+  "https://personal-s93qqbah.outsystemscloud.com/Medicine/rest/Medicine";
 const ELDERLY_BASE =
   process.env.ELDERLY_SERVICE_URL ||
   "https://qmo.outsystemscloud.com/ElderlyServices/rest/Elderly";

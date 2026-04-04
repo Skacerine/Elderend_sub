@@ -41,7 +41,7 @@ export default function App() {
     return () => clearInterval(t);
   }, []);
 
-  // Load medicines and schedule overrides
+  // Load medicines
   useEffect(() => {
     async function loadMeds() {
       try {
@@ -53,14 +53,24 @@ export default function App() {
           setMeds(arr.filter(m => m.IsActive === true || m.IsActive === 1 || m.IsActive === "true" || m.IsActive === "1"));
         }
       } catch (e) { console.error("Meds load error:", e.message); }
-      try {
-        const r = await fetch(`${API_BASE}/medicine/schedules`, { signal: AbortSignal.timeout(5000) });
-        if (r.ok) setScheduleOverrides(await r.json());
-      } catch { /* ignore */ }
       setMedsLoading(false);
     }
     loadMeds();
     const t = setInterval(loadMeds, 60000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Poll schedule overrides frequently — lightweight endpoint, updates in near real-time
+  // when guardian changes day selections in Medicare
+  useEffect(() => {
+    async function loadOverrides() {
+      try {
+        const r = await fetch(`${API_BASE}/medicine/schedules`, { signal: AbortSignal.timeout(5000) });
+        if (r.ok) setScheduleOverrides(await r.json());
+      } catch { /* ignore */ }
+    }
+    loadOverrides();
+    const t = setInterval(loadOverrides, 5000);
     return () => clearInterval(t);
   }, []);
 

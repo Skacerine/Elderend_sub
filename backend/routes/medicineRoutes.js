@@ -5,9 +5,29 @@ const MEDICINE_BASE_URL = "https://personal-s93qqbah.outsystemscloud.com/ManageM
 
 const router = express.Router();
 
+// In-memory schedule overrides — persists guardian's day selections since OutSystems
+// doesn't support deleting Schedule entries or storing comma-separated Day fields.
+// Key: "{MedicineId}" → value: ["Monday","Wednesday","Friday"]
+const scheduleOverrides = {};
+
 router.get("/health", (_req, res) =>
   res.json({ status: "online", service: "medicine-proxy" })
 );
+
+// GET /medicine/schedules — get all schedule overrides
+router.get("/schedules", (_req, res) => {
+  res.json(scheduleOverrides);
+});
+
+// PUT /medicine/schedules/:medicineId — set schedule override for a medicine
+router.put("/schedules/:medicineId", (req, res) => {
+  const { medicineId } = req.params;
+  const { days } = req.body; // array of full day names: ["Monday","Wednesday"]
+  if (!Array.isArray(days)) return res.status(400).json({ error: "days must be an array" });
+  scheduleOverrides[medicineId] = days;
+  console.log(`[Medicine] Schedule override set: med ${medicineId} → ${days.join(",")}`);
+  res.json({ ok: true });
+});
 
 // GET /medicine/:elderlyId — medicines for one elderly
 router.get("/:elderlyId", async (req, res) => {

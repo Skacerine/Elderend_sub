@@ -26,6 +26,7 @@ export default function App() {
   const [lastAlertTime, setLastAlertTime] = useState(null);
   const [meds, setMeds] = useState([]);
   const [medsLoading, setMedsLoading] = useState(true);
+  const [scheduleOverrides, setScheduleOverrides] = useState({});
   const [clock, setClock] = useState(fmtClock());
 
   const { user, logout } = useAuth();
@@ -40,7 +41,7 @@ export default function App() {
     return () => clearInterval(t);
   }, []);
 
-  // Load medicines
+  // Load medicines and schedule overrides
   useEffect(() => {
     async function loadMeds() {
       try {
@@ -52,6 +53,10 @@ export default function App() {
           setMeds(arr.filter(m => m.IsActive === true || m.IsActive === 1 || m.IsActive === "true" || m.IsActive === "1"));
         }
       } catch (e) { console.error("Meds load error:", e.message); }
+      try {
+        const r = await fetch(`${API_BASE}/medicine/schedules`, { signal: AbortSignal.timeout(5000) });
+        if (r.ok) setScheduleOverrides(await r.json());
+      } catch { /* ignore */ }
       setMedsLoading(false);
     }
     loadMeds();
@@ -95,22 +100,21 @@ export default function App() {
   }
 
   // Filter to only show medicines scheduled for today
-  const DAYS_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const DAYS_FULL = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
   const todayIdx = (() => { const d = new Date().getDay(); return d === 0 ? 6 : d - 1; })(); // 0=Mon..6=Sun
+  const todayName = DAYS_FULL[todayIdx];
   const todayMeds = meds.filter(m => {
-    // Check Schedule array first (OutSystems returns per-day schedule entries)
-    if (m.Schedule && m.Schedule.length > 0) {
-      const scheduledDays = m.Schedule.map(s => DAYS_FULL.indexOf(s.Day)).filter(i => i >= 0);
-      return scheduledDays.includes(todayIdx);
+    // Check backend schedule overrides first (guardian's day selections)
+    const override = scheduleOverrides[String(m.Id)];
+    if (override && Array.isArray(override)) {
+      return override.includes(todayName);
     }
-    // Fall back to Day field
-    if (!m.Day || m.Day === "0" || m.Day === "") return true; // no schedule set = every day
-    const scheduled = m.Day.split(",").map(d => {
-      const idx = DAYS_FULL.indexOf(d.trim()); // try full name first (Monday)
-      return idx >= 0 ? idx : DAYS_ABBR.indexOf(d.trim()); // fall back to abbreviation (Mon)
-    }).filter(i => i >= 0);
-    return scheduled.length === 0 || scheduled.includes(todayIdx);
+    // Check Schedule array (OutSystems per-day entries)
+    if (m.Schedule && m.Schedule.length > 0) {
+      return m.Schedule.some(s => s.Day === todayName);
+    }
+    // No schedule info = show every day
+    return true;
   });
   const sortedMeds = [...todayMeds].sort((a, b) => (a.ReminderTime || "").localeCompare(b.ReminderTime || ""));
   const h = new Date().getHours();

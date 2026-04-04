@@ -141,6 +141,21 @@ export default function Medicare() {
 
   useEffect(() => { loadData(); const t = setInterval(loadData, 30000); return () => clearInterval(t); }, [loadData]);
 
+  // Sync localStorage scheduleMap to backend on load (so phone-pwa can read overrides after backend restart)
+  useEffect(() => {
+    if (meds.length === 0) return;
+    const stored = scheduleMap;
+    if (!stored || Object.keys(stored).length === 0) return;
+    meds.forEach(med => {
+      const key = `${med.Name}_${med.ReminderTime}`;
+      if (stored[key] && med.Id) {
+        api("PUT", `/medicine/schedules/${med.Id}`, {
+          days: stored[key].map(i => DAYS[i])
+        }).catch(() => { });
+      }
+    });
+  }, [meds.length > 0]); // run once after first meds load
+
   // WebSocket listener for fall detection alerts
   useEffect(() => {
     const ws = connectToAlerts({
@@ -180,6 +195,11 @@ export default function Medicare() {
         api("POST", "/medicine/schedule", { MedicineId: medId, Day: DAYS[dayIdx], ReminderTime: addForm.ReminderTime })
       );
       await Promise.all(schedulePromises);
+
+      // Save schedule override to backend so phone-pwa can filter by day
+      api("PUT", `/medicine/schedules/${medId}`, {
+        days: addForm.days.map(i => DAYS[i])
+      }).catch(() => { });
 
       // Optimistically add the new medicine to local state so it shows immediately.
       // The OutSystems GET endpoints may be slow or broken, so we can't rely on loadData alone.
@@ -231,21 +251,18 @@ export default function Medicare() {
     const updated = adding ? [...current, dayIdx].sort() : current.filter(d => d !== dayIdx);
     setScheduleMap(prev => ({ ...prev, [key]: updated }));
 
-    // Sync to OutSystems: add schedule entry for new day, update Day field for removals
+    // Sync to OutSystems: add schedule entry for new day
     if (adding && med.Id) {
       api("POST", "/medicine/schedule", {
         MedicineId: med.Id, Day: DAYS[dayIdx], ReminderTime: med.ReminderTime || "08:00:00"
       }).catch(() => { });
     }
-    // Always update the Day field (OutSystems uses this as fallback)
-    api("PUT", "/medicine/update", {
-      Id: med.Id, Name: med.Name, ElderlyId: ELDERLY_ID,
-      Dose: Number(med.Dose) || 1,
-      Instructions: med.Instructions || "", IsActive: true,
-      Day: dayIndexesToStr(updated)
-    }).catch(() => { });
-    // Don't call loadData() immediately — let the 30s auto-refresh pick up changes
-    // so local scheduleMap state isn't overwritten by stale API data
+    // Save schedule override to backend so phone-pwa can read it
+    if (med.Id) {
+      api("PUT", `/medicine/schedules/${med.Id}`, {
+        days: updated.map(i => DAYS[i])
+      }).catch(() => { });
+    }
   }
 
   // ── Derived ──

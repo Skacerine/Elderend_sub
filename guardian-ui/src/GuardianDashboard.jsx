@@ -220,9 +220,9 @@ export default function GuardianDashboard() {
               <div className="metric-foot">Sound notification</div>
             </div>
             <div className="metric-card">
-              <div className="metric-label">Total Alerts</div>
+              <div className="metric-label">Fall Alerts</div>
               <div className="metric-value">{totalAlerts}</div>
-              <div className="metric-foot">Recent alerts received</div>
+              <div className="metric-foot">Since server started</div>
             </div>
           </div>
 
@@ -350,9 +350,41 @@ export default function GuardianDashboard() {
               </div>
             </div>
 
+            {/* Alert History */}
+            <div className="panel" style={{ marginTop: 16 }}>
+              <div className="panel-header">
+                <div className="panel-kicker">History</div>
+                <div className="panel-title">Recent Fall Alerts</div>
+              </div>
+              <div className="panel-body">
+                {messages.filter(m => m.type === "drop_alert").length === 0 ? (
+                  <div className="alert-empty">
+                    No fall alerts yet. Alerts will appear here when detected.
+                  </div>
+                ) : (
+                  <div className="log-list">
+                    {messages.filter(m => m.type === "drop_alert").slice(0, 10).map((msg, index) => {
+                      const d = msg.data || msg.incident || msg;
+                      return (
+                        <div key={`hist-${msg.receivedAt}-${index}`} className="log-item log-item--alert">
+                          <div className="log-top">
+                            <div className="log-type" style={{ color: "var(--red-strong, #f87171)" }}>
+                              {d.severity || "FALL"}
+                            </div>
+                            <div className="log-time">{formatTimestamp(msg.receivedAt)}</div>
+                          </div>
+                          <div className="log-body">
+                            Elderly {d.elderlyId || "—"} &middot; Score: {formatValue(d.score)} &middot; {severityTone(d.severity || "LOW")} risk
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
           </div>
-
-
 
         </div>
 

@@ -24,6 +24,8 @@ function severityTone(severity) {
   return "Low";
 }
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+
 export default function GuardianDashboardDev() {
   const { user } = useAuth();
   const [messages, setMessages] = useState([]);
@@ -39,6 +41,24 @@ export default function GuardianDashboardDev() {
   useEffect(() => {
     audioEnabledRef.current = audioEnabled;
   }, [audioEnabled]);
+
+  // Load recent alerts from backend on mount
+  useEffect(() => {
+    fetch(`${API_BASE}/alerts?n=20`, { signal: AbortSignal.timeout(6000) })
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped = data.map(a => ({
+            ...a,
+            receivedAt: a.receivedAt || new Date(a.alertTs).toISOString()
+          }));
+          setMessages(mapped);
+          const lastDrop = mapped.find(m => m.type === "drop_alert");
+          if (lastDrop) setActiveAlert(lastDrop);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const ws = connectToAlerts({
@@ -202,9 +222,9 @@ export default function GuardianDashboardDev() {
               <div className="metric-foot">Sound notification</div>
             </div>
             <div className="metric-card">
-              <div className="metric-label">Total Alerts</div>
+              <div className="metric-label">Fall Alerts</div>
               <div className="metric-value">{totalAlerts}</div>
-              <div className="metric-foot">Recent alerts received</div>
+              <div className="metric-foot">Since server started</div>
             </div>
           </div>
 
@@ -428,21 +448,26 @@ export default function GuardianDashboardDev() {
               <div className="panel-body">
                 <div className="stack">
                   <div className="info-card">
-                    <div className="info-title">Score interpretation</div>
-                    <div className="footer-note">
-                      &lt; 65 = At rest &middot; 65-99 = Normal activity &middot; 100+ = Possible fall
+                    <div className="info-title">Score Ranges</div>
+                    <div className="details-grid" style={{ marginTop: 6 }}>
+                      <div className="detail-row"><div className="detail-key" style={{ color: "var(--green, #22d3a5)" }}>0 – 64</div><div className="detail-value">At rest</div></div>
+                      <div className="detail-row"><div className="detail-key" style={{ color: "var(--amber, #fbbf24)" }}>65 – 99</div><div className="detail-value">Normal activity</div></div>
+                      <div className="detail-row"><div className="detail-key" style={{ color: "var(--red-strong, #f87171)" }}>100+</div><div className="detail-value">Possible fall</div></div>
                     </div>
                   </div>
                   <div className="info-card">
-                    <div className="info-title">Key indicators</div>
-                    <div className="footer-note">
-                      High score = drop + impact + rotation + stillness sequence. Post-impact stillness is only meaningful after impact-like motion.
+                    <div className="info-title">What triggers a high score</div>
+                    <div className="footer-note" style={{ lineHeight: 1.5 }}>
+                      1. Sudden drop in acceleration<br/>
+                      2. Strong impact<br/>
+                      3. Rapid spin / rotation<br/>
+                      4. Stillness after impact
                     </div>
                   </div>
                   <div className="info-card">
                     <div className="info-title">Response</div>
                     <div className="footer-note">
-                      Use as early warning. Verify with elderly before escalating. Threshold at 100 to reduce false positives.
+                      Verify with elderly before escalating. Threshold set at 100 to reduce false positives.
                     </div>
                   </div>
                 </div>

@@ -36,6 +36,14 @@ export default function NavBar() {
             {user.name || `Guardian #${user.guardianId}`}
           </span>
         )}
+        <NavLink to="/settings" style={({ isActive }) => ({
+          background: "none", border: "1px solid currentColor", borderRadius: "6px",
+          padding: "4px 10px", cursor: "pointer", fontSize: "14px",
+          color: "inherit", opacity: isActive ? 1 : 0.7, textDecoration: "none",
+          display: "flex", alignItems: "center",
+        })} title="Notification Settings">
+          &#9881;
+        </NavLink>
         <button className="theme-toggle" onClick={toggle} title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}>
           <span className="theme-toggle-icon">{theme === "light" ? "\u{1f319}" : "\u2600\ufe0f"}</span>
         </button>

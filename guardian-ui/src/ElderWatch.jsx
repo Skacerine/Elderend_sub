@@ -43,7 +43,7 @@ export default function ElderWatch() {
   const markerRef = useRef(null);
   const trailRef = useRef(null);
   const trailData = useRef([]);
-  const simPos = useRef({ lat: HOME.lat, lng: HOME.lng });
+  const lastPos = useRef({ lat: HOME.lat, lng: HOME.lng });
 
   const [mode, setMode] = useState("standard");
   const [statusText, setStatusText] = useState("Home");
@@ -128,25 +128,19 @@ export default function ElderWatch() {
     post("/gps/config", { mode, elderlyId: ELDERLY_ID, guardianId: user?.guardianId });
   }, [mode, ELDERLY_ID]);
 
-  // Simulated GPS tracking — gentle random walk near home
+  // Poll real GPS position from backend
   useEffect(() => {
     const currentMode = TRACKING_MODES.find(m => m.id === mode);
     if (!currentMode?.interval) return; // on-demand = no auto updates
 
-    const interval = setInterval(() => {
-      const pos = simPos.current;
-      const dLat = (Math.random() - 0.48) * 0.0004;
-      const dLng = (Math.random() - 0.48) * 0.0004;
-      let newLat = pos.lat + dLat;
-      let newLng = pos.lng + dLng;
+    async function pollPosition() {
+      const data = await get("/gps/devicegps");
+      if (!data || typeof data.lat !== "number") return;
 
-      const dist = haversine(HOME.lat, HOME.lng, newLat, newLng);
-      if (dist > 350) {
-        newLat += (HOME.lat - newLat) * 0.15;
-        newLng += (HOME.lng - newLng) * 0.15;
-      }
+      const newLat = data.lat;
+      const newLng = data.lng;
+      lastPos.current = { lat: newLat, lng: newLng };
 
-      simPos.current = { lat: newLat, lng: newLng };
       const currentDist = Math.round(haversine(HOME.lat, HOME.lng, newLat, newLng));
       const isHome = currentDist <= 500;
       const prevStatus = statusText;
@@ -178,8 +172,10 @@ export default function ElderWatch() {
         setAlerts(prev => [alert, ...prev].slice(0, 20));
         showToast("entered", "Returned Home", "Back within safe zone");
       }
-    }, Math.min(currentMode.interval, 3000)); // cap at 3s for simulation smoothness
+    }
 
+    pollPosition(); // fetch immediately on mount
+    const interval = setInterval(pollPosition, Math.min(currentMode.interval, 3000));
     return () => clearInterval(interval);
   }, [mode, statusText, showToast]);
 
@@ -218,7 +214,7 @@ export default function ElderWatch() {
     const d = await get(`/drawmap/${ELDERLY_ID}`);
     if (d && !d.error && markerRef.current) {
       markerRef.current.setLatLng([d.lat, d.lng]);
-      simPos.current = { lat: d.lat, lng: d.lng };
+      lastPos.current = { lat: d.lat, lng: d.lng };
       setStatusText(d.status === "Home" ? "Home" : "Outside");
       setDistance(d.distance || 0);
       setLastUpdate(new Date().toISOString());

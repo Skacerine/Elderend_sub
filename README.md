@@ -79,6 +79,23 @@ docker compose -f docker-compose.medicare.yml up --build
 | Guardian | 6588888888 | guard123 |
 | Elderly | 6591234567 | elder123 |
 
+## Notification Setup
+
+SMS and email alerts are sent to a hardcoded phone number and email. To change the recipient, edit:
+
+```
+backend/services/notificationService.js
+```
+
+Update these two lines at the top of the file:
+
+```js
+const GUARDIAN_PHONE = "+6592369965";       // change to your phone number
+const GUARDIAN_EMAIL = "alec.ong.2024@computing.smu.edu.sg";  // change to your email
+```
+
+Rebuild after changing: `docker compose up --build`
+
 ## How Fall Detection Works
 
 The phone PWA reads motion sensors and watches for a pattern that resembles a fall:

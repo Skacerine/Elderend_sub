@@ -15,6 +15,7 @@ import externalAlertRoutes from "./routes/externalAlertRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import { setWebSocketServer } from "./services/incidentService.js";
 import { initAlertListeners } from "./services/alertListener.js";
+import { getNotificationSettings, setNotificationSettings } from "./services/notificationService.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -67,6 +68,13 @@ app.use("/medicine", medicineRoutes);
 app.use("/api-docs", apiDocsRoutes);
 app.use("/external", externalAlertRoutes);
 app.use("/auth", authRoutes);
+
+// Notification settings (in-memory, resets on restart)
+app.get("/settings/notifications", (_req, res) => res.json(getNotificationSettings()));
+app.put("/settings/notifications", (req, res) => {
+  setNotificationSettings(req.body);
+  res.json(getNotificationSettings());
+});
 
 // Initialize geofence event listeners (replaces RabbitMQ consumers)
 initAlertListeners();

@@ -2,8 +2,18 @@
 
 const NOTIFICATION_BASE_URL = "https://smuedu-dev.outsystemsenterprise.com/SMULab_Notification/rest/Notification";
 
-const GUARDIAN_PHONE = "+6592369965";
-const GUARDIAN_EMAIL = "alec.ong.2024@computing.smu.edu.sg";
+// Defaults — overridden at runtime via /settings API
+let guardianPhone = "+6592369965";
+let guardianEmail = "alec.ong.2024@computing.smu.edu.sg";
+
+export function getNotificationSettings() {
+  return { phone: guardianPhone, email: guardianEmail };
+}
+
+export function setNotificationSettings({ phone, email }) {
+  if (phone) guardianPhone = phone;
+  if (email) guardianEmail = email;
+}
 
 function buildSmsMessage({ elderlyId, address, latitude, longitude, score, timestamp }) {
   const time = new Date(timestamp).toLocaleTimeString("en-SG", { hour12: false });
@@ -47,10 +57,10 @@ export async function sendFallAlertSMS(alertData) {
     const response = await fetch(`${NOTIFICATION_BASE_URL}/SendSMS`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mobile: GUARDIAN_PHONE, message })
+      body: JSON.stringify({ mobile: guardianPhone, message })
     });
     const result = await response.json();
-    console.log(`[Notification] SMS sent to ${GUARDIAN_PHONE}:`, result);
+    console.log(`[Notification] SMS sent to ${guardianPhone}:`, result);
     return result;
   } catch (error) {
     console.error(`[Notification] SMS failed:`, error.message);
@@ -66,13 +76,13 @@ export async function sendFallAlertEmail(alertData) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        emailAddress: GUARDIAN_EMAIL,
+        emailAddress: guardianEmail,
         emailSubject,
         emailBody
       })
     });
     const result = await response.json();
-    console.log(`[Notification] Email sent to ${GUARDIAN_EMAIL}:`, result);
+    console.log(`[Notification] Email sent to ${guardianEmail}:`, result);
     return result;
   } catch (error) {
     console.error(`[Notification] Email failed:`, error.message);

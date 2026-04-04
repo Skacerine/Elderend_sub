@@ -9,6 +9,7 @@ import ElderWatch from "./ElderWatch";
 import Medicare from "./Medicare";
 import GuardianDashboardDev from "./GuardianDashboardDev";
 import ElderWatchDev from "./ElderWatchDev";
+import Settings from "./Settings";
 
 function RequireAuth({ children }) {
   const { isLoggedIn } = useAuth();
@@ -29,6 +30,7 @@ function AppRoutes() {
         <Route path="/medicare" element={<RequireAuth><Medicare /></RequireAuth>} />
         <Route path="/dev" element={<RequireAuth><GuardianDashboardDev /></RequireAuth>} />
         <Route path="/elderwatch-dev" element={<RequireAuth><ElderWatchDev /></RequireAuth>} />
+        <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
       </Routes>
     </>
   );

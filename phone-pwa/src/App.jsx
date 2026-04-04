@@ -34,11 +34,40 @@ export default function App() {
   const guardianId = user?.guardianId;
   const deviceId = "PHONE_01";
   const ELDERLY_ID = elderlyId;
+  const [gpsPos, setGpsPos] = useState({ lat: null, lng: null, address: "Locating..." });
 
   // Clock
   useEffect(() => {
     const t = setInterval(() => setClock(fmtClock()), 1000);
     return () => clearInterval(t);
+  }, []);
+
+  // Real GPS tracking — watch position and send to backend
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    let lastSent = 0;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const { latitude: lat, longitude: lng } = pos.coords;
+        setGpsPos({ lat, lng, address: `${lat.toFixed(4)}, ${lng.toFixed(4)}` });
+
+        // Send to backend at most every 10 seconds
+        const now = Date.now();
+        if (now - lastSent < 10000) return;
+        lastSent = now;
+
+        fetch(`${API_BASE}/gps/devicegps/position`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lat, lng })
+        }).catch(() => {});
+      },
+      (err) => console.warn("[GPS] Geolocation error:", err.message),
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
   // Load medicines
@@ -81,7 +110,7 @@ export default function App() {
     onFeatureReady: async (features) => {
       try {
         setIsSending(true); setStatus("Checking...");
-        const result = await sendMotionSample({ elderlyId, guardianId, deviceId, timestamp: new Date().toISOString(), latitude: 1.2966, longitude: 103.8502, address: "Tanjong Pagar, Singapore", features });
+        const result = await sendMotionSample({ elderlyId, guardianId, deviceId, timestamp: new Date().toISOString(), latitude: gpsPos.lat || 1.2966, longitude: gpsPos.lng || 103.8502, address: gpsPos.address || "Unknown", features });
         setLastResponse(result); setLastAlertTime(new Date().toISOString());
         setStatus(result.detected ? "Alert sent" : "Protected");
       } catch (error) { setErrorMessage(error.message || "Send failed"); setStatus("Protected"); }
@@ -104,7 +133,7 @@ export default function App() {
 
   async function handleSimulate() {
     try { setErrorMessage(""); setStatus("Sending...");
-      const result = await simulateDrop({ elderlyId, guardianId, deviceId, latitude: 1.2966, longitude: 103.8502, address: "Tanjong Pagar, Singapore" });
+      const result = await simulateDrop({ elderlyId, guardianId, deviceId, latitude: gpsPos.lat || 1.2966, longitude: gpsPos.lng || 103.8502, address: gpsPos.address || "Unknown" });
       setLastResponse(result); setLastAlertTime(new Date().toISOString()); setStatus("Alert sent");
     } catch (e) { setErrorMessage(e.message || "Failed"); setStatus(isMonitoring ? "Protected" : "Paused"); }
   }

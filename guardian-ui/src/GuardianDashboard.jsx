@@ -24,6 +24,8 @@ function severityTone(severity) {
   return "Low";
 }
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+
 export default function GuardianDashboard() {
   const { user } = useAuth();
   const [messages, setMessages] = useState([]);
@@ -39,6 +41,25 @@ export default function GuardianDashboard() {
   useEffect(() => {
     audioEnabledRef.current = audioEnabled;
   }, [audioEnabled]);
+
+  // Load recent alerts from backend on mount
+  useEffect(() => {
+    fetch(`${API_BASE}/alerts?n=20`, { signal: AbortSignal.timeout(6000) })
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped = data.map(a => ({
+            ...a,
+            receivedAt: a.receivedAt || new Date(a.alertTs).toISOString()
+          }));
+          setMessages(mapped);
+          // Restore the most recent drop alert as active
+          const lastDrop = mapped.find(m => m.type === "drop_alert");
+          if (lastDrop) setActiveAlert(lastDrop);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const ws = connectToAlerts({

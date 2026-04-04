@@ -1,4 +1,5 @@
 ﻿import { addIncident } from "../store/incidentStore.js";
+import { addAlert } from "../store/alertStore.js";
 
 let wssRef = null;
 
@@ -20,6 +21,7 @@ export function createIncident({ elderlyId, deviceId, features, severity, score,
   };
 
   addIncident(incident);
+  addAlert({ ...incident, type: "drop_alert", receivedAt: incident.timestamp });
   broadcastIncident(incident);
 
   return incident;

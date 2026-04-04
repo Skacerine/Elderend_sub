@@ -60,21 +60,7 @@
 
   cd "C:\Users\aleco\Desktop\SMU Y2 SEM2\ESD\Elderall_phonedropper\Elderend_sub"
   docker compose down
-  docker compose up --build
-
-  Check:
-  - medicare-backend logs: Backend listening on port 4000
-  - guardian-ui logs: Vite ready on http://localhost:5173
-  - phone-pwa logs: Vite ready on http://localhost:5174
-  - Run docker compose ps — backend shows (healthy)
-
-  ---
-  Part 2: Backend Health
-
-  Open in browser or curl:
-
-  ┌───────────────────────────────────────┬──────────────────────────┐
-  │                  URL                  │         Expected         │
+  docker compose up --builds
   ├───────────────────────────────────────┼──────────────────────────┤
   │ http://localhost:4000/health          │ {"ok":true, ...}         │
   ├───────────────────────────────────────┼──────────────────────────┤

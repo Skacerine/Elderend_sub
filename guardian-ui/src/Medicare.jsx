@@ -6,7 +6,8 @@ import { useAuth } from "./AuthContext";
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 const RESTOCK_LEAD_DAYS = 7;
 const RESTOCK_BUFFER_DAYS = 30;
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const DAYS_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const DAY_FULL = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 // ── API helpers ──
@@ -37,8 +38,11 @@ function dayIndexesToStr(indices) {
   return indices.map(i => DAYS[i]).join(",");
 }
 
-// Get schedule days: API field first, then local state, then default all days
+// Get schedule days: from Schedule array first, then Day field, then local state, then default all days
 function getMedDays(med, scheduleMap) {
+  if (med.Schedule && med.Schedule.length > 0) {
+    return med.Schedule.map(s => DAYS.indexOf(s.Day)).filter(i => i >= 0);
+  }
   const fromApi = parseDayField(med.Day);
   if (fromApi && fromApi.length > 0) return fromApi;
   const key = `${med.Name}_${med.ReminderTime}`;
@@ -94,18 +98,23 @@ export default function Medicare() {
     if (!data) data = await get("/medicine");
     if (data) {
       let arr = Array.isArray(data) ? data : [data];
-      // Map OutSystems Quantity → Stock for frontend compat
-      arr = arr.map(m => ({ ...m, Stock: m.Quantity ?? m.Stock ?? 0 }));
+      // Map OutSystems Quantity → Stock, add ReminderTime from Schedule if missing
+      arr = arr.map(m => ({
+        ...m,
+        Stock: m.Quantity ?? m.Stock ?? 0,
+        ReminderTime: m.ReminderTime || m.Schedule?.[0]?.ReminderTime || "08:00:00"
+      }));
       if (ELDERLY_ID) arr = arr.filter(m => !m.ElderlyId || String(m.ElderlyId) === String(ELDERLY_ID));
       const active = arr.filter(m => m.IsActive === true || m.IsActive === 1 || m.IsActive === "true" || m.IsActive === "1");
       setMeds(active);
-      // Rebuild scheduleMap from API Day fields so local state stays in sync
+      // Rebuild scheduleMap from API Schedule arrays so local state stays in sync
       setScheduleMap(prev => {
         const next = { ...prev };
         active.forEach(m => {
           const key = `${m.Name}_${m.ReminderTime}`;
-          const fromApi = parseDayField(m.Day);
-          if (fromApi && fromApi.length > 0) next[key] = fromApi;
+          if (m.Schedule && m.Schedule.length > 0) {
+            next[key] = m.Schedule.map(s => DAYS.indexOf(s.Day)).filter(i => i >= 0);
+          }
         });
         return next;
       });
@@ -143,7 +152,22 @@ export default function Medicare() {
   async function handleAdd(e) {
     e.preventDefault(); setAddStatus(null);
     try {
-      await api("POST", "/medicine/create", { Name: addForm.Name, ElderlyId: ELDERLY_ID, ReminderTime: addForm.ReminderTime, Quantity: addForm.Stock, Dose: addForm.Dose, Instructions: addForm.Instructions, IsActive: true, Day: dayIndexesToStr(addForm.days) });
+      // Create medicine with first day
+      const firstDay = DAYS[addForm.days[0]];
+      const createPayload = { Id: 0, Name: addForm.Name, ElderlyId: ELDERLY_ID, ReminderTime: addForm.ReminderTime, Quantity: addForm.Stock, Dose: addForm.Dose, Instructions: addForm.Instructions, IsActive: true, Day: firstDay };
+      const createResponse = await api("POST", "/medicine/create", createPayload);
+      if (!createResponse || createResponse.error) throw new Error(createResponse?.error || "Create failed");
+
+      // OutSystems returns {"MedicineId":78}, so use that as the ID
+      const medId = createResponse.MedicineId;
+      if (!medId) throw new Error("No MedicineId returned from create");
+
+      // Add schedules for additional days
+      const schedulePromises = addForm.days.slice(1).map(dayIdx =>
+        api("POST", "/medicine/schedule", { MedicineId: medId, Day: DAYS[dayIdx], ReminderTime: addForm.ReminderTime })
+      );
+      await Promise.all(schedulePromises);
+
       const key = `${addForm.Name}_${addForm.ReminderTime}`;
       setScheduleMap(prev => ({ ...prev, [key]: addForm.days }));
       setAddStatus({ ok: true }); setAddForm({ Name: "", ReminderTime: "08:00:00", Stock: 30, Dose: 1, Instructions: "", days: [0, 1, 2, 3, 4, 5, 6] }); setShowAdd(false); loadData();
@@ -176,7 +200,7 @@ export default function Medicare() {
       Dose: Number(med.Dose) || 1,
       Instructions: med.Instructions || "", IsActive: true,
       Day: dayIndexesToStr(updated)
-    }).then(() => loadData()).catch(() => {});
+    }).then(() => loadData()).catch(() => { });
   }
 
   // ── Derived ──
@@ -233,7 +257,7 @@ export default function Medicare() {
         <div className="mc-tab-content">
           {/* Day selector */}
           <div className="mc-week-bar">
-            {DAYS.map((d, i) => (
+            {DAYS_SHORT.map((d, i) => (
               <button key={d} className={`mc-week-day ${selectedDay === i ? "mc-week-day--active" : ""} ${i === todayIdx ? "mc-week-day--today" : ""}`} onClick={() => setSelectedDay(i)}>
                 <span className="mc-week-day-label">{d}</span>
                 <span className="mc-week-day-date">{weekDates[i].getDate()}</span>
@@ -295,7 +319,7 @@ export default function Medicare() {
           </div>
 
           <div className="mc-cal-grid">
-            {DAYS.map(d => <div key={d} className="mc-cal-head">{d}</div>)}
+            {DAYS_SHORT.map(d => <div key={d} className="mc-cal-head">{d}</div>)}
             {calGrid.map((day, i) => {
               if (day === null) return <div key={`e${i}`} className="mc-cal-cell mc-cal-cell--empty" />;
               const cellDate = new Date(calYear, calMonth, day);
@@ -353,7 +377,7 @@ export default function Medicare() {
               </div>
               <input placeholder="Instructions (optional)" value={addForm.Instructions} onChange={e => setAddForm(p => ({ ...p, Instructions: e.target.value }))} />
               <div className="mc-day-picker">
-                {DAYS.map((d, i) => (
+                {DAYS_SHORT.map((d, i) => (
                   <button key={d} type="button" className={`mc-day-pick ${addForm.days.includes(i) ? "mc-day-pick--on" : ""}`}
                     onClick={() => setAddForm(p => ({ ...p, days: p.days.includes(i) ? p.days.filter(x => x !== i) : [...p.days, i].sort() }))}>
                     {d}
@@ -382,7 +406,7 @@ export default function Medicare() {
 
                 {/* Day schedule pills */}
                 <div className="mc-day-picker mc-day-picker--small">
-                  {DAYS.map((d, i) => (
+                  {DAYS_SHORT.map((d, i) => (
                     <button key={d} type="button" className={`mc-day-pick mc-day-pick--sm ${medDays.includes(i) ? "mc-day-pick--on" : ""}`}
                       onClick={() => toggleScheduleDay(med, i)}>{d[0]}</button>
                   ))}

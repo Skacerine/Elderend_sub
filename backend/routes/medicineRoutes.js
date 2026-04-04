@@ -5,10 +5,6 @@ const MEDICINE_BASE_URL = "https://personal-s93qqbah.outsystemscloud.com/ManageM
 
 const router = express.Router();
 
-// OutSystems requires full day names, not abbreviations
-const DAY_ABBR_TO_FULL = { Mon: "Monday", Tue: "Tuesday", Wed: "Wednesday", Thu: "Thursday", Fri: "Friday", Sat: "Saturday", Sun: "Sunday" };
-function toFullDay(abbr) { return DAY_ABBR_TO_FULL[abbr] || abbr; }
-
 router.get("/health", (_req, res) =>
   res.json({ status: "online", service: "medicine-proxy" })
 );
@@ -19,8 +15,8 @@ router.get("/:elderlyId", async (req, res) => {
     const response = await fetch(`${MEDICINE_BASE_URL}/medicine/${req.params.elderlyId}/`, {
       headers: { Accept: "application/json" }
     });
-    // 404 means this elderly has no medicines yet — return empty array, not an error
-    if (response.status === 404) return res.json([]);
+    // 404 or 500 means this elderly has no medicines yet — return empty array, not an error
+    if (response.status === 404 || response.status === 500) return res.json([]);
     if (!response.ok) {
       const text = await response.text();
       return res.status(response.status).json({ error: text });
@@ -71,15 +67,11 @@ router.delete("/delete", async (req, res) => {
 });
 
 // POST /medicine/create — create new medicine in OutSystems
-// OutSystems only accepts a single full day name per medicine create call.
-// For multiple days, we create with the first day then add schedule entries for the rest.
 router.post("/create", async (req, res) => {
   try {
-    const dayStr = String(req.body.Day || "");
-    const days = dayStr.split(",").map(d => toFullDay(d.trim())).filter(Boolean);
-    const firstDay = days[0] || "Monday";
-
+    // Ensure correct types for OutSystems
     const payload = {
+      Id: 0, // OutSystems will assign real ID
       Name: String(req.body.Name || ""),
       ElderlyId: Number(req.body.ElderlyId) || 1,
       ReminderTime: String(req.body.ReminderTime || "08:00:00"),
@@ -87,7 +79,7 @@ router.post("/create", async (req, res) => {
       Dose: Number(req.body.Dose) || 1,
       Instructions: String(req.body.Instructions || ""),
       IsActive: true,
-      Day: firstDay
+      Day: String(req.body.Day || "")
     };
     console.log("[Medicine] Creating:", JSON.stringify(payload));
     const response = await fetch(`${MEDICINE_BASE_URL}/medicine/`, {
@@ -97,34 +89,8 @@ router.post("/create", async (req, res) => {
     });
     const text = await response.text();
     console.log("[Medicine] Create response:", response.status, text);
-
-    if (!response.ok) {
-      try { return res.status(response.status).json(JSON.parse(text)); }
-      catch { return res.status(response.status).json({ result: text }); }
-    }
-
-    let result;
-    try { result = JSON.parse(text); } catch { result = { result: text }; }
-    const medicineId = result.MedicineId;
-
-    // Add schedule entries for remaining days
-    if (medicineId && days.length > 1) {
-      const reminderTime = payload.ReminderTime;
-      for (const day of days.slice(1)) {
-        try {
-          console.log(`[Medicine] Adding schedule: MedicineId=${medicineId}, Day=${day}`);
-          await fetch(`${MEDICINE_BASE_URL}/schedule/`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ MedicineId: medicineId, Day: day, ReminderTime: reminderTime })
-          });
-        } catch (err) {
-          console.error(`[Medicine] Schedule add failed for ${day}:`, err.message);
-        }
-      }
-    }
-
-    res.json(result);
+    try { res.status(response.status).json(JSON.parse(text)); }
+    catch { res.status(response.status).json({ result: text }); }
   } catch (e) {
     console.error("[Medicine] Create failed:", e.message);
     res.status(503).json({ error: e.message });
@@ -142,11 +108,7 @@ router.put("/update", async (req, res) => {
       Instructions: String(req.body.Instructions || ""),
       IsActive: req.body.IsActive !== undefined ? req.body.IsActive : true
     };
-    if (req.body.Day !== undefined) {
-      // Convert abbreviated day names to full names for OutSystems
-      const days = String(req.body.Day).split(",").map(d => toFullDay(d.trim())).filter(Boolean);
-      payload.Day = days[0] || "";
-    }
+    if (req.body.Day !== undefined) payload.Day = String(req.body.Day);
     if (req.body.ReminderTime !== undefined) payload.ReminderTime = String(req.body.ReminderTime);
     if (req.body.Quantity !== undefined) payload.Quantity = Number(req.body.Quantity);
     console.log("[Medicine] Updating:", JSON.stringify(payload));
@@ -172,6 +134,7 @@ router.put("/stock", async (req, res) => {
       MedicineId: Number(req.body.MedicineId),
       Quantity: Number(req.body.Quantity) || 0
     };
+    console.log("[Medicine] Updating stock:", JSON.stringify(payload));
     const response = await fetch(`${MEDICINE_BASE_URL}/stock/`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -182,6 +145,30 @@ router.put("/stock", async (req, res) => {
     catch { res.status(response.status).json({ result: text }); }
   } catch (e) {
     console.error("[Medicine] Stock update failed:", e.message);
+    res.status(503).json({ error: e.message });
+  }
+});
+
+// POST /medicine/schedule — add schedule to medicine
+router.post("/schedule", async (req, res) => {
+  try {
+    const payload = {
+      MedicineId: Number(req.body.MedicineId),
+      Day: String(req.body.Day),
+      ReminderTime: String(req.body.ReminderTime)
+    };
+    console.log("[Medicine] Adding schedule:", JSON.stringify(payload));
+    const response = await fetch(`${MEDICINE_BASE_URL}/schedule/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const text = await response.text();
+    console.log("[Medicine] Schedule response:", response.status, text);
+    try { res.status(response.status).json(JSON.parse(text)); }
+    catch { res.status(response.status).json({ result: text }); }
+  } catch (e) {
+    console.error("[Medicine] Schedule failed:", e.message);
     res.status(503).json({ error: e.message });
   }
 });
@@ -218,10 +205,14 @@ router.post("/notify", async (req, res) => {
 
   try {
     const [smsResult, emailResult] = await Promise.allSettled([
-      sendFallAlertSMS({ elderlyId, severity: "MEDICINE", score: "N/A", address: "N/A", latitude: null, longitude: null, timestamp: new Date().toISOString(),
-        _overrideMessage: smsMessage }),
-      sendFallAlertEmail({ elderlyId, severity: "MEDICINE", score: "N/A", address: "N/A", latitude: null, longitude: null, timestamp: new Date().toISOString(),
-        _overrideEmail: { subject: `[Reminder] Daily Medicines — Elderly ${elderlyId}`, body: emailBody } })
+      sendFallAlertSMS({
+        elderlyId, severity: "MEDICINE", score: "N/A", address: "N/A", latitude: null, longitude: null, timestamp: new Date().toISOString(),
+        _overrideMessage: smsMessage
+      }),
+      sendFallAlertEmail({
+        elderlyId, severity: "MEDICINE", score: "N/A", address: "N/A", latitude: null, longitude: null, timestamp: new Date().toISOString(),
+        _overrideEmail: { subject: `[Reminder] Daily Medicines — Elderly ${elderlyId}`, body: emailBody }
+      })
     ]);
 
     res.json({

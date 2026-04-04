@@ -435,39 +435,36 @@ export default function GuardianDashboardDev() {
                   </pre>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Right sidebar — interpretation & notes */}
-          <div className="guardian-right">
-            <div className="panel">
-              <div className="panel-header">
-                <div className="panel-kicker">Guide</div>
-                <div className="panel-title">Scoring Reference</div>
-              </div>
-              <div className="panel-body">
-                <div className="stack">
-                  <div className="info-card">
-                    <div className="info-title">Score Ranges</div>
-                    <div className="details-grid" style={{ marginTop: 6 }}>
-                      <div className="detail-row"><div className="detail-key" style={{ color: "var(--green, #22d3a5)" }}>0 – 64</div><div className="detail-value">At rest</div></div>
-                      <div className="detail-row"><div className="detail-key" style={{ color: "var(--amber, #fbbf24)" }}>65 – 99</div><div className="detail-value">Normal activity</div></div>
-                      <div className="detail-row"><div className="detail-key" style={{ color: "var(--red-strong, #f87171)" }}>100+</div><div className="detail-value">Possible fall</div></div>
+              <div className="panel">
+                <div className="panel-header">
+                  <div className="panel-kicker">Guide</div>
+                  <div className="panel-title">Scoring Reference</div>
+                </div>
+                <div className="panel-body">
+                  <div className="stack">
+                    <div className="info-card">
+                      <div className="info-title">Score Ranges</div>
+                      <div className="details-grid" style={{ marginTop: 6 }}>
+                        <div className="detail-row"><div className="detail-key" style={{ color: "var(--green, #22d3a5)" }}>0 – 64</div><div className="detail-value">At rest</div></div>
+                        <div className="detail-row"><div className="detail-key" style={{ color: "var(--amber, #fbbf24)" }}>65 – 99</div><div className="detail-value">Normal activity</div></div>
+                        <div className="detail-row"><div className="detail-key" style={{ color: "var(--red-strong, #f87171)" }}>100+</div><div className="detail-value">Possible fall</div></div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="info-card">
-                    <div className="info-title">What triggers a high score</div>
-                    <div className="footer-note" style={{ lineHeight: 1.5 }}>
-                      1. Sudden drop in acceleration<br/>
-                      2. Strong impact<br/>
-                      3. Rapid spin / rotation<br/>
-                      4. Stillness after impact
+                    <div className="info-card">
+                      <div className="info-title">What triggers a high score</div>
+                      <div className="footer-note" style={{ lineHeight: 1.5 }}>
+                        1. Sudden drop in acceleration<br/>
+                        2. Strong impact<br/>
+                        3. Rapid spin / rotation<br/>
+                        4. Stillness after impact
+                      </div>
                     </div>
-                  </div>
-                  <div className="info-card">
-                    <div className="info-title">Response</div>
-                    <div className="footer-note">
-                      Verify with elderly before escalating. Threshold set at 100 to reduce false positives.
+                    <div className="info-card">
+                      <div className="info-title">Response</div>
+                      <div className="footer-note">
+                        Verify with elderly before escalating. Threshold set at 100 to reduce false positives.
+                      </div>
                     </div>
                   </div>
                 </div>

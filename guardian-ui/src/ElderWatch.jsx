@@ -134,7 +134,7 @@ export default function ElderWatch() {
     if (!currentMode?.interval) return; // on-demand = no auto updates
 
     async function pollPosition() {
-      const data = await get("/gps/devicegps");
+      const data = await get("/gps/realgps");
       if (!data || typeof data.lat !== "number") return;
 
       const newLat = data.lat;

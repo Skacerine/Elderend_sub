@@ -7,7 +7,8 @@ const router = express.Router();
 // ── Single elderly config ──
 const HOME = { lat: 1.35305, lng: 103.94402 };
 
-let position = { lat: HOME.lat, lng: HOME.lng, ts: Date.now() };
+let position = { lat: HOME.lat, lng: HOME.lng, ts: Date.now() };       // simulation (Dev)
+let realPosition = { lat: HOME.lat, lng: HOME.lng, ts: Date.now() };   // real phone GPS
 
 const meta = {
   elderlyId: 1,
@@ -122,6 +123,7 @@ router.get("/health", (_req, res) =>
   res.json({ status: "online", service: "gps-service", ...simCfg, intervalMs: intervalMs() })
 );
 
+// Simulation position (used by ElderWatch Dev)
 router.get("/devicegps", (_req, res) =>
   res.json({ elderlyId: meta.elderlyId, name: meta.name, ...position })
 );
@@ -133,6 +135,19 @@ router.post("/devicegps/position", (req, res) => {
   stopReplay();
   position = { lat, lng, ts: Date.now() };
   push();
+  res.json({ success: true, lat, lng });
+});
+
+// Real phone GPS (used by ElderWatch production)
+router.get("/realgps", (_req, res) =>
+  res.json({ elderlyId: meta.elderlyId, name: meta.name, ...realPosition })
+);
+
+router.post("/realgps", (req, res) => {
+  const { lat, lng } = req.body;
+  if (typeof lat !== "number" || typeof lng !== "number")
+    return res.status(400).json({ error: "lat and lng numbers required" });
+  realPosition = { lat, lng, ts: Date.now() };
   res.json({ success: true, lat, lng });
 });
 

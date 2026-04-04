@@ -57,7 +57,7 @@ export default function App() {
         if (now - lastSent < 10000) return;
         lastSent = now;
 
-        fetch(`${API_BASE}/gps/devicegps/position`, {
+        fetch(`${API_BASE}/gps/realgps`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ lat, lng })

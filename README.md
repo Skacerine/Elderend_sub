@@ -1,56 +1,119 @@
-# Elderall Phone Drop Detection System
+# ElderAll — Elderly Safety Monitoring System
 
-Elderall is a lightweight elderly safety prototype that uses a smartphone to detect possible falls and send a live alert to a guardian dashboard.
+ElderAll is an elderly safety system that uses a smartphone to detect falls, track location, and manage medication schedules. When a fall is detected, the system sends real-time alerts (popup, SMS, email) to a guardian dashboard.
 
-In simple terms, the phone acts like a motion-sensitive watcher. If it detects a movement pattern that looks dangerous, such as a sudden drop, impact, spin, and then stillness, it sends that information to a backend service. The backend then decides whether the event is serious enough to trigger an alert. If it is, the guardian dashboard immediately shows an emergency alert and plays an alarm sound.
+## Live Deployment
 
-This project was built as a practical proof-of-concept to show how web technologies, motion sensors, and real-time communication can be used to support elderly care in a simple and accessible way.
+| Service | URL |
+|---------|-----|
+| Guardian Dashboard | https://guardianphonedropper.vercel.app |
+| Phone PWA (Elderly) | https://phonedropper9000-xi.vercel.app |
+| Backend | https://elderend-backend.onrender.com |
 
----
+## System Overview
 
-## What Problem This Project Solves
+```
+Phone PWA (Elderly's phone)
+  ├── Motion sensors → fall detection
+  ├── GPS location → backend
+  └── Medicine schedule viewer
+        │
+        ▼
+Backend (Express + WebSocket)
+  ├── Fall scoring algorithm
+  ├── GPS tracking + geofence (500m home zone)
+  ├── Medicine CRUD (proxy to OutSystems)
+  ├── Auth (proxy to OutSystems)
+  └── Notifications (SMS + Email via OutSystems)
+        │
+        ▼
+Guardian Dashboard (React)
+  ├── GuardianUI     — Real-time fall alerts with alarm
+  ├── ElderWatch     — Live GPS map with geofence boundary
+  ├── Medicare       — Medicine schedule, calendar, inventory
+  ├── ElderWatch(Dev) — Dev controls (D-pad, replay scenarios)
+  └── GuardianUI(Dev) — Dev panels (event stream, payload viewer)
+```
 
-Older adults who live alone may be vulnerable if they fall and are unable to call for help. Traditional monitoring systems can be expensive, intrusive, or require dedicated hardware. This project explores a more accessible alternative by using something many people already have: a smartphone.
+## External Services
 
-The idea is not to replace professional medical devices, but to demonstrate how a phone-based monitoring system can help detect suspicious movement and notify a guardian quickly.
+| Service | URL | Purpose |
+|---------|-----|---------|
+| OutSystems (Guardian) | `qmo.outsystemscloud.com/GuardianServices/rest/Guardian` | Guardian auth & profile |
+| OutSystems (Elderly) | `qmo.outsystemscloud.com/ElderlyServices/rest/Elderly` | Elderly auth & profile |
+| OutSystems (Medicine) | `personal-s93qqbah.outsystemscloud.com/ManageMedicine/rest/Medicine` | Medicine CRUD & schedules |
+| OutSystems (Notification) | `smuedu-dev.outsystemsenterprise.com/SMULab_Notification/rest/Notification` | SMS & Email alerts |
 
----
+## Quick Start (Docker)
 
-## What the System Does
+### Full app (all services)
 
-The system has three main parts:
+```bash
+cd Elderend_sub
+docker compose up --build
+```
 
-### 1. Phone App (https://phonedropper9000-xi.vercel.app) - try this on phone
-The phone app runs as a Progressive Web App (PWA) on the elderly person’s phone. It reads the phone’s motion sensors and watches for suspicious movement patterns.
+| Service | Port |
+|---------|------|
+| Backend | http://localhost:4000 |
+| Guardian UI | http://localhost:5173 |
+| Phone PWA | http://localhost:5174 |
 
-### 2. Backend Service - no UI for this but it is hosted on render (wss://elderend-backend.onrender.com)
-The backend receives motion data from the phone, calculates a risk score, and decides whether the movement is serious enough to count as a possible fall.
+### Medicare microservice only
 
-### 3. Guardian Dashboard (https://guardianphonedropper.vercel.app) - try this on laptop/phone
-The guardian dashboard receives live alerts from the backend. When a serious event is detected, it displays the alert details, plays an alarm sound, and attempts to vibrate the device if supported.
+```bash
+docker compose -f docker-compose.medicare.yml up --build
+```
 
----
+| Service | Port |
+|---------|------|
+| Medicare Backend | http://localhost:4001 |
+| Medicare UI | http://localhost:5175 |
 
-## How motion is calibrated
+> Only need `--build` when you've changed code. Otherwise `docker compose up` is fine.
 
-When the phone is being monitored, it keeps watching motion changes in the background. The app looks for signs such as:
+## Test Accounts
 
-- a sudden drop in acceleration
-- a strong impact
-- a rapid spin or rotation
-- stillness immediately after the suspicious movement
+| Role | Phone | Password |
+|------|-------|----------|
+| Guardian | 6588888888 | guard123 |
+| Elderly | 6591234567 | elder123 |
 
-These motion signals are grouped into a small set of features and sent to the backend. The backend then assigns a score based on how dangerous the movement looks.
+## How Fall Detection Works
 
-If the score is high enough, the system treats it as a possible fall and sends a live alert to the guardian dashboard.
+The phone PWA reads motion sensors and watches for a pattern that resembles a fall:
 
-This means the phone is not simply reacting to any movement. It is trying to identify a pattern that resembles a fall, rather than ordinary handling.
+1. Sudden drop in acceleration
+2. Strong impact
+3. Rapid spin or rotation
+4. Stillness after impact
 
----
+These signals are scored by the backend. If the score is high enough (`>= 100`), it triggers a real-time alert to the guardian dashboard with popup, alarm sound, SMS, and email.
 
-## Current Alert Sensitivity
+## Project Structure
 
-The system currently only triggers a real alert when the motion score is:
+```
+Elderend_sub/
+├── backend/                 # Main Express server (port 4000)
+│   ├── routes/              # API routes (motion, gps, medicine, auth, alerts)
+│   ├── services/            # Notification service (SMS + email)
+│   └── store/               # In-memory coordinate store
+├── guardian-ui/             # Guardian React dashboard (port 5173)
+│   └── src/
+│       ├── GuardianUI.jsx   # Fall alert dashboard
+│       ├── ElderWatch.jsx   # GPS tracking map
+│       ├── Medicare.jsx     # Medicine management
+│       └── AuthContext.jsx  # Auth state (localStorage)
+├── phone-pwa/               # Elderly phone app (port 5174)
+│   └── src/App.jsx          # Motion detection + medicine viewer
+├── medicare-service/        # Standalone Medicare microservice (port 4001)
+├── docker-compose.yml       # Full stack compose
+├── docker-compose.medicare.yml  # Medicare-only compose
+└── TOTEST.md                # Testing guide
+```
 
-```js
-score >= 100
+## Stopping
+
+```bash
+docker compose down
+```

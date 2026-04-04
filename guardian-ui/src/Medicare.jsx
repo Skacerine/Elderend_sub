@@ -167,7 +167,8 @@ export default function Medicare() {
     try {
       // Create medicine with first day
       const firstDay = DAYS[addForm.days[0]];
-      const createPayload = { Id: 0, Name: addForm.Name, ElderlyId: ELDERLY_ID, ReminderTime: addForm.ReminderTime, Quantity: addForm.Stock, Dose: addForm.Dose, Instructions: addForm.Instructions, IsActive: true, Day: firstDay };
+      const reminderTime = addForm.ReminderTime && addForm.ReminderTime.split(":").length === 2 ? addForm.ReminderTime + ":00" : addForm.ReminderTime;
+      const createPayload = { Id: 0, Name: addForm.Name, ElderlyId: ELDERLY_ID, ReminderTime: reminderTime, Quantity: addForm.Stock, Dose: addForm.Dose, Instructions: addForm.Instructions, IsActive: true, Day: firstDay };
       const createResponse = await api("POST", "/medicine/create", createPayload);
       if (!createResponse || createResponse.error) throw new Error(createResponse?.error || "Create failed");
 

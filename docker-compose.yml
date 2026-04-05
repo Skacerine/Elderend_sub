@@ -57,7 +57,7 @@ services:
       - "4003:4003"
     environment:
       - PORT=4003
-      - NOTIFICATION_MS_URL=http://notification_ms:4005
+      - ALERT_MS_URL=http://alert_ms:4002
     networks:
       - elderall-net
     restart: unless-stopped

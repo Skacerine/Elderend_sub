@@ -4,7 +4,9 @@ import cors from "cors";
 const app = express();
 const PORT = process.env.PORT || 4003;
 const MEDICINE_BASE_URL = process.env.MEDICINE_BASE_URL || "https://personal-s93qqbah.outsystemscloud.com/ManageMedicine/rest/Medicine";
-const NOTIFICATION_MS_URL = process.env.NOTIFICATION_MS_URL || "http://notification_ms:4005";
+const NOTIFICATION_BASE_URL = process.env.NOTIFICATION_BASE_URL || "https://smuedu-dev.outsystemsenterprise.com/SMULab_Notification/rest/Notification";
+const ELDERLY_BASE_URL = process.env.ELDERLY_SERVICE_URL || "https://qmo.outsystemscloud.com/ElderlyServices/rest/Elderly";
+const ALERT_MS_URL = process.env.ALERT_MS_URL || "http://alert_ms:4002";
 
 app.use(cors());
 app.use(express.json());
@@ -105,23 +107,61 @@ app.post("/medicine/schedule", async (req, res) => {
   } catch (e) { res.status(503).json({ error: e.message }); }
 });
 
-// POST /medicine/notify — sends reminder via notification_ms
+// POST /medicine/notify — sends reminder SMS directly via SMU Lab API
+// Also checks stock levels and alerts guardian via Alert Dashboard if low
 app.post("/medicine/notify", async (req, res) => {
   const { elderlyId, medicines } = req.body;
   if (!medicines || !medicines.length) return res.status(400).json({ error: "No medicines provided" });
+
+  // Step 6: Format SMS message
   const smsMessage = `[ElderWatch] Medicine reminder for Elderly ${elderlyId}:\n${medicines.map(m => `- ${m.Name} (${Number(m.Dose) || 1} dose) at ${m.ReminderTime || "N/A"}`).join("\n")}\nPlease ensure medicines are taken on time.`;
-  let emailBody = `<h2>&#x1F48A; Medicine Reminder</h2><p>Daily medication schedule for Elderly ${elderlyId}</p><hr>`;
-  medicines.forEach(m => { const dose = Number(m.Dose) || 1; emailBody += `<p><b>${m.Name}</b> — ${m.ReminderTime || "N/A"} — ${dose} dose${dose > 1 ? "s" : ""}</p>`; });
-  const medsWithInstr = medicines.filter(m => m.Instructions);
-  if (medsWithInstr.length) { emailBody += `<hr><h3>Instructions</h3>`; medsWithInstr.forEach(m => { emailBody += `<p><b>${m.Name}:</b> ${m.Instructions}</p>`; }); }
-  emailBody += `<hr><p><b>Please ensure all medicines are taken on time today.</b></p><p><small>ElderWatch Medicine Reminder System</small></p>`;
+
+  // Step 7-8: If inventory running low, get GuardianID from Elderly atomic service
+  let guardianId = null;
+  const lowStockMeds = medicines.filter(m => (Number(m.Stock || m.Quantity) || 0) <= 5);
+  if (lowStockMeds.length > 0) {
+    try {
+      const elderlyRes = await fetch(`${ELDERLY_BASE_URL}/GetElderly?elderly_id=${elderlyId}`, { headers: { Accept: "application/json" } });
+      if (elderlyRes.ok) {
+        const elderlyData = await elderlyRes.json();
+        guardianId = elderlyData.guardian_id || elderlyData.GuardianId;
+        console.log(`[Medicine] Fetched GuardianID ${guardianId} from Elderly service for low stock alert`);
+      }
+    } catch (e) { console.error("[Medicine] Failed to fetch Elderly info:", e.message); }
+  }
+
+  // Step 9a: Notify Guardian via SMS (direct call to SMU Lab Utilities SMS API)
+  let smsResult = null;
   try {
-    const r = await fetch(`${NOTIFICATION_MS_URL}/internal/send-fall-alert`, {
+    const smsRes = await fetch(`${NOTIFICATION_BASE_URL}/SendSMS`, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ elderlyId, severity: "MEDICINE", score: "N/A", address: "N/A", latitude: null, longitude: null, timestamp: new Date().toISOString(), _overrideMessage: smsMessage, _overrideEmail: { subject: `[Reminder] Daily Medicines — Elderly ${elderlyId}`, body: emailBody } })
+      body: JSON.stringify({ mobile: req.body.guardianPhone || process.env.DEFAULT_GUARDIAN_PHONE || "+6592369965", message: smsMessage })
     });
-    res.json(await r.json());
-  } catch (e) { res.status(500).json({ error: e.message }); }
+    smsResult = await smsRes.json();
+    console.log("[Medicine] SMS sent:", smsResult);
+  } catch (e) {
+    console.error("[Medicine] SMS failed:", e.message);
+    smsResult = { status: "error", error: e.message };
+  }
+
+  // Step 9b: If low stock, notify Guardian via Alert Dashboard (alert_ms)
+  let alertResult = null;
+  if (lowStockMeds.length > 0) {
+    const lowStockNames = lowStockMeds.map(m => `${m.Name} (${Number(m.Stock || m.Quantity) || 0} left)`).join(", ");
+    try {
+      const alertRes = await fetch(`${ALERT_MS_URL}/external/alert`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ elderly_id: elderlyId, text: `Low stock alert: ${lowStockNames}. Please restock soon.` })
+      });
+      alertResult = await alertRes.json();
+      console.log("[Medicine] Alert Dashboard notified for low stock:", alertResult);
+    } catch (e) {
+      console.error("[Medicine] Alert Dashboard notification failed:", e.message);
+      alertResult = { status: "error", error: e.message };
+    }
+  }
+
+  res.json({ sms: smsResult, alert: alertResult, lowStockMeds: lowStockMeds.map(m => m.Name) });
 });
 
 app.listen(PORT, "0.0.0.0", () => console.log(`medicine_ms listening on port ${PORT}`));

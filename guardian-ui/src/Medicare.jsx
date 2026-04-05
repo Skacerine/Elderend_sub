@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import AlertPopup from "./AlertPopup";
 import { connectToAlerts } from "./socket";
 import { useAuth } from "./AuthContext";
@@ -91,6 +91,7 @@ export default function Medicare() {
   const [addStatus, setAddStatus] = useState(null);
   const [restockMed, setRestockMed] = useState(null);
   const [restockAmt, setRestockAmt] = useState(0);
+  const hasSyncedSchedules = useRef(false);
   const [scheduleMap, setScheduleMapRaw] = useState(() => {
     try { return JSON.parse(localStorage.getItem("mc_scheduleMap") || "{}"); } catch { return {}; }
   });
@@ -143,7 +144,8 @@ export default function Medicare() {
 
   // Sync localStorage scheduleMap to backend on load (so phone-pwa can read overrides after backend restart)
   useEffect(() => {
-    if (meds.length === 0) return;
+    if (meds.length === 0 || hasSyncedSchedules.current) return;
+    hasSyncedSchedules.current = true;
     const stored = scheduleMap;
     if (!stored || Object.keys(stored).length === 0) return;
     meds.forEach(med => {
@@ -154,7 +156,7 @@ export default function Medicare() {
         }).catch(() => { });
       }
     });
-  }, [meds.length > 0]); // run once after first meds load
+  }, [meds, scheduleMap]);
 
   // WebSocket listener for fall detection alerts
   useEffect(() => {

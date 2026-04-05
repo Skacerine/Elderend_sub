@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createMotionMonitor } from "./motionSensor";
 import { sendMotionSample, simulateDrop } from "./api";
 import { useAuth } from "./AuthContext";
@@ -35,6 +35,7 @@ export default function App() {
   const deviceId = "PHONE_01";
   const ELDERLY_ID = elderlyId;
   const [gpsPos, setGpsPos] = useState({ lat: null, lng: null, address: "Locating..." });
+  const gpsPosRef = useRef(gpsPos);
 
   // Clock
   useEffect(() => {
@@ -50,7 +51,9 @@ export default function App() {
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         const { latitude: lat, longitude: lng } = pos.coords;
-        setGpsPos({ lat, lng, address: `${lat.toFixed(4)}, ${lng.toFixed(4)}` });
+        const gps = { lat, lng, address: `${lat.toFixed(4)}, ${lng.toFixed(4)}` };
+        setGpsPos(gps);
+        gpsPosRef.current = gps;
 
         // Send to backend at most every 10 seconds
         const now = Date.now();
@@ -110,7 +113,8 @@ export default function App() {
     onFeatureReady: async (features) => {
       try {
         setIsSending(true); setStatus("Checking...");
-        const result = await sendMotionSample({ elderlyId, guardianId, deviceId, timestamp: new Date().toISOString(), latitude: gpsPos.lat || 1.2966, longitude: gpsPos.lng || 103.8502, address: gpsPos.address || "Unknown", features });
+        const pos = gpsPosRef.current;
+        const result = await sendMotionSample({ elderlyId, guardianId, deviceId, timestamp: new Date().toISOString(), latitude: pos.lat || 1.2966, longitude: pos.lng || 103.8502, address: pos.address || "Unknown", features });
         setLastResponse(result); setLastAlertTime(new Date().toISOString());
         setStatus(result.detected ? "Alert sent" : "Protected");
       } catch (error) { setErrorMessage(error.message || "Send failed"); setStatus("Protected"); }

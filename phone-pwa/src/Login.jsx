@@ -25,6 +25,7 @@ export default function Login() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, password }),
       });
+      if (!res.ok) { setError("Server error, please try again"); setLoading(false); return; }
       const data = await res.json();
       if (data.success) {
         login({ elderlyId: data.elderlyId, name: data.name });

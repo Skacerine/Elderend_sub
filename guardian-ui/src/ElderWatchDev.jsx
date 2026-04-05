@@ -7,7 +7,8 @@ import { useAuth } from "./AuthContext";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
-const HOME = { lat: 1.35305, lng: 103.94402 };
+const DEFAULT_HOME = { lat: 1.35305, lng: 103.94402 };
+const DEFAULT_RADIUS = 500;
 
 async function get(url) {
   try {
@@ -38,7 +39,20 @@ export default function ElderWatchDev() {
   const markerRef = useRef(null);
   const trailRef = useRef(null);
   const trailData = useRef([]);
+  const homeMarkerRef = useRef(null);
+  const homeCircleRef = useRef(null);
 
+  const [home, setHomeRaw] = useState(() => {
+    try { const s = JSON.parse(localStorage.getItem("ew_home")); if (s?.lat && s?.lng) return s; } catch {} return DEFAULT_HOME;
+  });
+  const [radius, setRadiusRaw] = useState(() => {
+    const s = parseInt(localStorage.getItem("ew_radius"), 10); return s >= 10 ? s : DEFAULT_RADIUS;
+  });
+  const setHome = (v) => { setHomeRaw(v); localStorage.setItem("ew_home", JSON.stringify(v)); };
+  const setRadius = (v) => { setRadiusRaw(v); localStorage.setItem("ew_radius", String(v)); };
+  const [editingHome, setEditingHome] = useState(false);
+  const [homeDraft, setHomeDraft] = useState({ lat: String(home.lat), lng: String(home.lng), radius: String(radius), postal: "" });
+  const [postalLooking, setPostalLooking] = useState(false);
   const [mode, setModeState] = useState("standard");
   const [speed, setSpeedState] = useState(10);
   const [running, setRunning] = useState(true);
@@ -64,7 +78,7 @@ export default function ElderWatchDev() {
   // Init map
   useEffect(() => {
     if (mapInstance.current) return;
-    const map = L.map(mapRef.current, { zoomControl: false }).setView([HOME.lat, HOME.lng], 16);
+    const map = L.map(mapRef.current, { zoomControl: false }).setView([DEFAULT_HOME.lat, DEFAULT_HOME.lng], 16);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "&copy; OpenStreetMap"
     }).addTo(map);
@@ -74,9 +88,9 @@ export default function ElderWatchDev() {
       html: `<div style="background:#fff;border:2px solid #2d7a50;border-radius:8px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 2px 8px rgba(45,122,80,.25)">&#x1f475;</div>`,
       iconSize: [24, 24], iconAnchor: [12, 12], className: ""
     });
-    L.marker([HOME.lat, HOME.lng], { icon: homeIcon }).addTo(map).bindPopup("<b>Home Base</b><br>Boundary: 500m");
-    L.circle([HOME.lat, HOME.lng], {
-      radius: 500, color: "#2d7a50", fillColor: "#2d7a50",
+    homeMarkerRef.current = L.marker([DEFAULT_HOME.lat, DEFAULT_HOME.lng], { icon: homeIcon }).addTo(map).bindPopup(`<b>Home Base</b><br>Boundary: ${DEFAULT_RADIUS}m`);
+    homeCircleRef.current = L.circle([DEFAULT_HOME.lat, DEFAULT_HOME.lng], {
+      radius: DEFAULT_RADIUS, color: "#2d7a50", fillColor: "#2d7a50",
       fillOpacity: 0.06, weight: 1.5, dashArray: "6 4"
     }).addTo(map);
 
@@ -84,7 +98,7 @@ export default function ElderWatchDev() {
       html: `<div style="background:#d45a5a;border:3px solid #fff;border-radius:50%;width:18px;height:18px;box-shadow:0 0 0 3px rgba(212,90,90,.25),0 2px 6px rgba(0,0,0,.15)"></div>`,
       iconSize: [18, 18], iconAnchor: [9, 9], className: ""
     });
-    const marker = L.marker([HOME.lat, HOME.lng], { icon: elIcon, draggable: true, title: elderlyLabel });
+    const marker = L.marker([DEFAULT_HOME.lat, DEFAULT_HOME.lng], { icon: elIcon, draggable: true, title: elderlyLabel });
     marker.addTo(map).bindPopup(`<b>${elderlyLabel}</b>`);
     marker.on("dragend", async (e) => {
       const { lat, lng } = e.target.getLatLng();
@@ -96,6 +110,21 @@ export default function ElderWatchDev() {
 
     return () => { map.remove(); mapInstance.current = null; };
   }, []);
+
+  // Update home marker and circle when home/radius changes
+  useEffect(() => {
+    if (homeMarkerRef.current) {
+      homeMarkerRef.current.setLatLng([home.lat, home.lng]);
+      homeMarkerRef.current.setPopupContent(`<b>Home Base</b><br>Boundary: ${radius}m`);
+    }
+    if (homeCircleRef.current) {
+      homeCircleRef.current.setLatLng([home.lat, home.lng]);
+      homeCircleRef.current.setRadius(radius);
+    }
+    if (mapInstance.current) {
+      mapInstance.current.panTo([home.lat, home.lng]);
+    }
+  }, [home, radius]);
 
   // Update map marker
   const updateMarker = useCallback((d) => {
@@ -351,7 +380,7 @@ export default function ElderWatchDev() {
           <div ref={mapRef} className="ew-map" />
           <div className="ew-map-badge">
             <div style={{ fontSize: "0.65rem", color: "var(--muted-2)", marginBottom: 3 }}>LIVE MAP</div>
-            <div><span style={{ color: "#2d7a50" }}>&#9679;</span> Home boundary (500m)</div>
+            <div><span style={{ color: "#2d7a50" }}>&#9679;</span> Home boundary ({radius}m)</div>
             <div><span style={{ color: "#d45a5a" }}>&#9679;</span> Elderly — drag to move</div>
           </div>
         </div>
@@ -374,13 +403,90 @@ export default function ElderWatchDev() {
             </div>
           </div>
 
+          {/* Home Settings */}
+          <div className="ew-card">
+            <div className="ew-card-label">HOME LOCATION</div>
+            {editingHome ? (
+              <>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: "0.75rem" }}>
+                  <label style={{ color: "var(--muted)" }}>
+                    Postal Code
+                    <div style={{ display: "flex", gap: 4, marginTop: 2, minWidth: 0 }}>
+                      <input type="text" placeholder="e.g. 530123" value={homeDraft.postal} onChange={e => setHomeDraft(d => ({ ...d, postal: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
+                        style={{ flex: 1, minWidth: 0, padding: "4px 6px", background: "var(--panel-soft, #1a1a2e)", border: "1px solid var(--border)", borderRadius: 4, color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: "0.75rem" }} />
+                      <button type="button" className="ew-btn ew-btn--primary" disabled={homeDraft.postal.length !== 6 || postalLooking} style={{ fontSize: "0.7rem", padding: "4px 8px", flexShrink: 0, whiteSpace: "nowrap" }} onClick={async () => {
+                        setPostalLooking(true);
+                        try {
+                          const r = await fetch(`https://www.onemap.gov.sg/api/common/elastic/search?searchVal=${homeDraft.postal}&returnGeom=Y&getAddrDetails=Y`, { signal: AbortSignal.timeout(6000) });
+                          const data = await r.json();
+                          if (data.results?.length > 0) {
+                            const res = data.results[0];
+                            setHomeDraft(d => ({ ...d, lat: res.LATITUDE, lng: res.LONGITUDE }));
+                            showToast("info", "Address Found", res.ADDRESS || res.SEARCHVAL);
+                          } else {
+                            showToast("left", "Not Found", "No results for this postal code");
+                          }
+                        } catch { showToast("left", "Lookup Failed", "Could not reach OneMap"); }
+                        setPostalLooking(false);
+                      }}>{postalLooking ? "..." : "Lookup"}</button>
+                    </div>
+                  </label>
+                  <label style={{ color: "var(--muted)" }}>
+                    Latitude
+                    <input type="number" step="any" value={homeDraft.lat} onChange={e => setHomeDraft(d => ({ ...d, lat: e.target.value }))}
+                      style={{ width: "100%", marginTop: 2, padding: "4px 6px", background: "var(--panel-soft, #1a1a2e)", border: "1px solid var(--border)", borderRadius: 4, color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: "0.75rem" }} />
+                  </label>
+                  <label style={{ color: "var(--muted)" }}>
+                    Longitude
+                    <input type="number" step="any" value={homeDraft.lng} onChange={e => setHomeDraft(d => ({ ...d, lng: e.target.value }))}
+                      style={{ width: "100%", marginTop: 2, padding: "4px 6px", background: "var(--panel-soft, #1a1a2e)", border: "1px solid var(--border)", borderRadius: 4, color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: "0.75rem" }} />
+                  </label>
+                  <label style={{ color: "var(--muted)" }}>
+                    Radius (m)
+                    <input type="number" min="10" max="5000" value={homeDraft.radius} onChange={e => setHomeDraft(d => ({ ...d, radius: e.target.value }))}
+                      style={{ width: "100%", marginTop: 2, padding: "4px 6px", background: "var(--panel-soft, #1a1a2e)", border: "1px solid var(--border)", borderRadius: 4, color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: "0.75rem" }} />
+                  </label>
+                </div>
+                <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
+                  <button className="ew-btn ew-btn--primary" style={{ flex: 1 }} onClick={() => {
+                    const lat = parseFloat(homeDraft.lat);
+                    const lng = parseFloat(homeDraft.lng);
+                    const r = parseInt(homeDraft.radius, 10);
+                    if (!isNaN(lat) && !isNaN(lng) && !isNaN(r) && r >= 10) {
+                      setHome({ lat, lng });
+                      setRadius(r);
+                      setEditingHome(false);
+                      showToast("info", "Home Updated", `${lat.toFixed(5)}, ${lng.toFixed(5)} — ${r}m`);
+                    }
+                  }}>Save</button>
+                  <button className="ew-btn" style={{ flex: 1 }} onClick={() => {
+                    setHomeDraft({ lat: String(home.lat), lng: String(home.lng), radius: String(radius), postal: "" });
+                    setEditingHome(false);
+                  }}>Cancel</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: "0.75rem", fontFamily: "var(--font-mono)", color: "var(--muted)", lineHeight: 1.6 }}>
+                  <div>Lat: {home.lat.toFixed(5)}</div>
+                  <div>Lng: {home.lng.toFixed(5)}</div>
+                  <div>Radius: {radius}m</div>
+                </div>
+                <button className="ew-btn" style={{ width: "100%", marginTop: 6 }} onClick={() => {
+                  setHomeDraft({ lat: String(home.lat), lng: String(home.lng), radius: String(radius), postal: "" });
+                  setEditingHome(true);
+                }}>Edit Home</button>
+              </>
+            )}
+          </div>
+
           {/* Map data */}
           <div className="ew-card">
             <div className="ew-card-label">Map Display Data</div>
             <div className="ew-detail-row"><span>Latitude</span><span className="ew-mono">{statusData?.lat?.toFixed(6) ?? "-"}</span></div>
             <div className="ew-detail-row"><span>Longitude</span><span className="ew-mono">{statusData?.lng?.toFixed(6) ?? "-"}</span></div>
             <div className="ew-detail-row"><span>Distance</span><span className="ew-mono">{statusData?.distance != null ? statusData.distance + "m" : "-"}</span></div>
-            <div className="ew-detail-row"><span>Boundary</span><span className="ew-mono">500m</span></div>
+            <div className="ew-detail-row"><span>Boundary</span><span className="ew-mono">{radius}m</span></div>
             <div className="ew-detail-row"><span>Updated</span><span className="ew-mono">{fmtTime(statusData?.timestamp)}</span></div>
           </div>
 
@@ -419,7 +525,7 @@ export default function ElderWatchDev() {
         <div className="ew-tab-content">
           {activeTab === "alerts" && (
             alerts.length === 0 ? (
-              <div className="ew-empty">No geofence events yet. Move elderly beyond the 500m boundary to trigger alerts.</div>
+              <div className="ew-empty">No geofence events yet. Move elderly beyond the {radius}m boundary to trigger alerts.</div>
             ) : alerts.map((a, i) => (
               <div key={a._id || i} className={`ew-alert-item ${a.type === "left" ? "ew-alert-item--left" : "ew-alert-item--entered"}`}>
                 <div style={{ fontSize: "1.1rem" }}>{a.type === "left" ? "\u{1f6a8}" : "\u2705"}</div>

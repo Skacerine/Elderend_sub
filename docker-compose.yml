@@ -1,22 +1,118 @@
 services:
-  backend:
-    build: ./backend
-    container_name: elderall-backend
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq
     ports:
-      - "4000:4000"
+      - "5673:5672"
+      - "15673:15672"
     environment:
-      - PORT=4000
-      - GUARDIAN_UI_URL=http://localhost:5173
-      - PHONE_PWA_URL=http://localhost:5174
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
     networks:
       - elderall-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:4000/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 15s
+      retries: 10
+      start_period: 30s
+
+  gps_ms:
+    build: ./gps_ms
+    container_name: gps_ms
+    ports:
+      - "4001:4001"
+    environment:
+      - PORT=4001
+      - AMQP_URL=amqp://guest:guest@rabbitmq:5672
+      - ALERT_MS_URL=http://alert_ms:4002
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - elderall-net
+    restart: unless-stopped
+
+  alert_ms:
+    build: ./alert_ms
+    container_name: alert_ms
+    ports:
+      - "4002:4002"
+    environment:
+      - PORT=4002
+      - GPS_MS_URL=http://gps_ms:4001
+      - NOTIFICATION_MS_URL=http://notification_ms:4005
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - elderall-net
+    restart: unless-stopped
+
+  medicine_ms:
+    build: ./medicine_ms
+    container_name: medicine_ms
+    ports:
+      - "4003:4003"
+    environment:
+      - PORT=4003
+      - NOTIFICATION_MS_URL=http://notification_ms:4005
+    networks:
+      - elderall-net
+    restart: unless-stopped
+
+  auth_ms:
+    build: ./auth_ms
+    container_name: auth_ms
+    ports:
+      - "4004:4004"
+    environment:
+      - PORT=4004
+    networks:
+      - elderall-net
+    restart: unless-stopped
+
+  notification_ms:
+    build: ./notification_ms
+    container_name: notification_ms
+    ports:
+      - "4005:4005"
+    environment:
+      - PORT=4005
+      - AMQP_URL=amqp://guest:guest@rabbitmq:5672
+      - DEFAULT_GUARDIAN_PHONE=+6592369965
+      - DEFAULT_GUARDIAN_EMAIL=alec.ong.2024@computing.smu.edu.sg
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - elderall-net
+    restart: unless-stopped
+
+  gateway_ms:
+    build: ./gateway_ms
+    container_name: gateway_ms
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - GPS_MS_URL=http://gps_ms:4001
+      - ALERT_MS_URL=http://alert_ms:4002
+      - MEDICINE_MS_URL=http://medicine_ms:4003
+      - AUTH_MS_URL=http://auth_ms:4004
+      - NOTIFICATION_MS_URL=http://notification_ms:4005
+      - GUARDIAN_UI_URL=http://localhost:5173
+      - PHONE_PWA_URL=http://localhost:5174
+    depends_on:
+      - gps_ms
+      - alert_ms
+      - medicine_ms
+      - auth_ms
+      - notification_ms
+    networks:
+      - elderall-net
+    restart: unless-stopped
 
   guardian-ui:
     build: ./guardian-ui
@@ -27,8 +123,7 @@ services:
       - VITE_API_BASE_URL=http://localhost:4000
       - VITE_WS_BASE_URL=ws://localhost:4000
     depends_on:
-      backend:
-        condition: service_healthy
+      - gateway_ms
     networks:
       - elderall-net
     restart: unless-stopped
@@ -41,8 +136,7 @@ services:
     environment:
       - VITE_API_BASE_URL=http://localhost:4000
     depends_on:
-      backend:
-        condition: service_healthy
+      - gateway_ms
     networks:
       - elderall-net
     restart: unless-stopped

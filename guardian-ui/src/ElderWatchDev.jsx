@@ -36,6 +36,7 @@ export default function ElderWatchDev() {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const markerRef = useRef(null);
+  const circleRef = useRef(null);   // ← ref so we can update the circle radius live
   const trailRef = useRef(null);
   const trailData = useRef([]);
 
@@ -53,6 +54,10 @@ export default function ElderWatchDev() {
   const [toasts, setToasts] = useState([]);
   const [popupAlert, setPopupAlert] = useState(null);
   const lastAlertId = useRef(null);
+
+  // Safe-zone radius state (min 10, max 500)
+  const [radius, setRadius] = useState(500);
+  const [radiusPending, setRadiusPending] = useState(false);
 
   // Toast helper
   const showToast = useCallback((type, message, sub) => {
@@ -74,11 +79,14 @@ export default function ElderWatchDev() {
       html: `<div style="background:#fff;border:2px solid #2d7a50;border-radius:8px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 2px 8px rgba(45,122,80,.25)">&#x1f475;</div>`,
       iconSize: [24, 24], iconAnchor: [12, 12], className: ""
     });
-    L.marker([HOME.lat, HOME.lng], { icon: homeIcon }).addTo(map).bindPopup("<b>Home Base</b><br>Boundary: 500m");
-    L.circle([HOME.lat, HOME.lng], {
+    L.marker([HOME.lat, HOME.lng], { icon: homeIcon }).addTo(map).bindPopup("<b>Home Base</b>");
+
+    // Store circle in ref so we can update its radius later
+    const circle = L.circle([HOME.lat, HOME.lng], {
       radius: 500, color: "#2d7a50", fillColor: "#2d7a50",
       fillOpacity: 0.06, weight: 1.5, dashArray: "6 4"
     }).addTo(map);
+    circleRef.current = circle;
 
     const elIcon = L.divIcon({
       html: `<div style="background:#d45a5a;border:3px solid #fff;border-radius:50%;width:18px;height:18px;box-shadow:0 0 0 3px rgba(212,90,90,.25),0 2px 6px rgba(0,0,0,.15)"></div>`,
@@ -96,6 +104,26 @@ export default function ElderWatchDev() {
 
     return () => { map.remove(); mapInstance.current = null; };
   }, []);
+
+  // Load current radius from backend on mount
+  useEffect(() => {
+    get("/gps/radius").then(d => {
+      if (d && typeof d.radius === "number") {
+        setRadius(d.radius);
+        if (circleRef.current) circleRef.current.setRadius(d.radius);
+      }
+    });
+  }, []);
+
+  // Apply radius change: update map circle + push to backend
+  async function applyRadius(newRadius) {
+    const clamped = Math.min(500, Math.max(10, Math.round(newRadius)));
+    setRadius(clamped);
+    if (circleRef.current) circleRef.current.setRadius(clamped);
+    setRadiusPending(true);
+    await post("/gps/radius", { radius: clamped });
+    setRadiusPending(false);
+  }
 
   // Update map marker
   const updateMarker = useCallback((d) => {
@@ -312,6 +340,33 @@ export default function ElderWatchDev() {
             <div style={{ textAlign: "center", marginTop: 4, fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--yellow)", fontWeight: 700 }}>{speed}x</div>
           </div>
 
+          {/* Safe Zone Radius */}
+          <div className="ew-card">
+            <div className="ew-card-label">Safe Zone Radius</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: "0.75rem", color: "var(--muted-2)" }}>
+              <span>10m</span>
+              <input
+                type="range"
+                min="10"
+                max="500"
+                step="10"
+                value={radius}
+                onChange={e => {
+                  const v = Number(e.target.value);
+                  setRadius(v);
+                  if (circleRef.current) circleRef.current.setRadius(v);
+                }}
+                onMouseUp={e => applyRadius(Number(e.target.value))}
+                onTouchEnd={e => applyRadius(Number(e.target.value))}
+                style={{ flex: 1 }}
+              />
+              <span>500m</span>
+            </div>
+            <div style={{ textAlign: "center", marginTop: 4, fontFamily: "var(--font-mono)", fontSize: "0.85rem", color: "var(--green)", fontWeight: 700 }}>
+              {radius}m {radiusPending && <span style={{ fontSize: "0.7rem", color: "var(--muted-2)" }}>saving…</span>}
+            </div>
+          </div>
+
           {/* D-Pad */}
           <div className="ew-card">
             <div className="ew-card-label">Move Elderly</div>
@@ -351,7 +406,7 @@ export default function ElderWatchDev() {
           <div ref={mapRef} className="ew-map" />
           <div className="ew-map-badge">
             <div style={{ fontSize: "0.65rem", color: "var(--muted-2)", marginBottom: 3 }}>LIVE MAP</div>
-            <div><span style={{ color: "#2d7a50" }}>&#9679;</span> Home boundary (500m)</div>
+            <div><span style={{ color: "#2d7a50" }}>&#9679;</span> Home boundary ({radius}m)</div>
             <div><span style={{ color: "#d45a5a" }}>&#9679;</span> Elderly — drag to move</div>
           </div>
         </div>
@@ -380,7 +435,7 @@ export default function ElderWatchDev() {
             <div className="ew-detail-row"><span>Latitude</span><span className="ew-mono">{statusData?.lat?.toFixed(6) ?? "-"}</span></div>
             <div className="ew-detail-row"><span>Longitude</span><span className="ew-mono">{statusData?.lng?.toFixed(6) ?? "-"}</span></div>
             <div className="ew-detail-row"><span>Distance</span><span className="ew-mono">{statusData?.distance != null ? statusData.distance + "m" : "-"}</span></div>
-            <div className="ew-detail-row"><span>Boundary</span><span className="ew-mono">500m</span></div>
+            <div className="ew-detail-row"><span>Boundary</span><span className="ew-mono">{radius}m</span></div>
             <div className="ew-detail-row"><span>Updated</span><span className="ew-mono">{fmtTime(statusData?.timestamp)}</span></div>
           </div>
 
@@ -419,7 +474,7 @@ export default function ElderWatchDev() {
         <div className="ew-tab-content">
           {activeTab === "alerts" && (
             alerts.length === 0 ? (
-              <div className="ew-empty">No geofence events yet. Move elderly beyond the 500m boundary to trigger alerts.</div>
+              <div className="ew-empty">No geofence events yet. Move elderly beyond the {radius}m boundary to trigger alerts.</div>
             ) : alerts.map((a, i) => (
               <div key={a._id || i} className={`ew-alert-item ${a.type === "left" ? "ew-alert-item--left" : "ew-alert-item--entered"}`}>
                 <div style={{ fontSize: "1.1rem" }}>{a.type === "left" ? "\u{1f6a8}" : "\u2705"}</div>

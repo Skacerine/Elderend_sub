@@ -5,6 +5,7 @@ import { useAuth } from "./AuthContext";
 
 const STORAGE_KEY = "elderall_monitoring_enabled";
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const NGROK_HEADERS = { "ngrok-skip-browser-warning": "1" };
 
 function fmtTime(t) {
   if (!t) return "-";
@@ -62,7 +63,7 @@ export default function App() {
 
         fetch(`${API_BASE}/gps/realgps`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...NGROK_HEADERS },
           body: JSON.stringify({ lat, lng })
         }).catch(() => {});
       },
@@ -77,7 +78,7 @@ export default function App() {
   useEffect(() => {
     async function loadMeds() {
       try {
-        const r = await fetch(`${API_BASE}/medicine/${ELDERLY_ID}`, { signal: AbortSignal.timeout(8000) });
+        const r = await fetch(`${API_BASE}/medicine/${ELDERLY_ID}`, { headers: NGROK_HEADERS, signal: AbortSignal.timeout(8000) });
         if (r.ok) {
           const data = await r.json();
           let arr = Array.isArray(data) ? data : [data];
@@ -97,7 +98,7 @@ export default function App() {
   useEffect(() => {
     async function loadOverrides() {
       try {
-        const r = await fetch(`${API_BASE}/medicine/schedules`, { signal: AbortSignal.timeout(5000) });
+        const r = await fetch(`${API_BASE}/medicine/schedules`, { headers: NGROK_HEADERS, signal: AbortSignal.timeout(5000) });
         if (r.ok) setScheduleOverrides(await r.json());
       } catch { /* ignore */ }
     }

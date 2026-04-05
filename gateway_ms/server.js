@@ -22,17 +22,7 @@ const allowedOrigins = [
   process.env.PHONE_PWA_URL
 ].filter(Boolean);
 
-app.use(
-  cors({
-    origin(origin, callback) {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      if (origin.includes("outsystemscloud.com") || origin.includes("outsystemsenterprise.com")) return callback(null, true);
-      return callback(new Error(`CORS blocked for origin: ${origin}`));
-    },
-    credentials: true
-  })
-);
+app.use(cors({ origin: true, credentials: true }));
 
 // Health check — aggregates status from all services
 app.get("/health", async (_req, res) => {

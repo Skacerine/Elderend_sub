@@ -11,14 +11,15 @@ const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
 const DAY_FULL = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 // ── API helpers ──
+const NGROK_H = { "ngrok-skip-browser-warning": "1" };
 async function api(method, url, body) {
-  const opts = { method, headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(10000) };
+  const opts = { method, headers: { "Content-Type": "application/json", ...NGROK_H }, signal: AbortSignal.timeout(10000) };
   if (body) opts.body = JSON.stringify(body);
   const r = await fetch(`${API_BASE}${url}`, opts);
   if (!r.ok) { const t = await r.text().catch(() => ""); throw new Error(`${r.status}: ${t}`); }
   const t = await r.text(); return t ? JSON.parse(t) : { ok: true };
 }
-async function get(url) { try { const r = await fetch(`${API_BASE}${url}`, { signal: AbortSignal.timeout(8000) }); return r.ok ? r.json() : null; } catch { return null; } }
+async function get(url) { try { const r = await fetch(`${API_BASE}${url}`, { headers: NGROK_H, signal: AbortSignal.timeout(8000) }); return r.ok ? r.json() : null; } catch { return null; } }
 
 // ── Utility ──
 function fmtTime(t) { if (!t) return "-"; const [h, m] = t.split(":").map(Number); return `${h % 12 || 12}:${(m || 0).toString().padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`; }

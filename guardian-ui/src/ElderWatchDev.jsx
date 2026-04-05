@@ -10,9 +10,11 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 const DEFAULT_HOME = { lat: 1.35305, lng: 103.94402 };
 const DEFAULT_RADIUS = 500;
 
+const NGROK_H = { "ngrok-skip-browser-warning": "1" };
+
 async function get(url) {
   try {
-    const r = await fetch(`${API_BASE}${url}`, { signal: AbortSignal.timeout(6000) });
+    const r = await fetch(`${API_BASE}${url}`, { headers: NGROK_H, signal: AbortSignal.timeout(6000) });
     return r.ok ? r.json() : null;
   } catch { return null; }
 }
@@ -21,7 +23,7 @@ async function post(url, body = {}) {
   try {
     const r = await fetch(`${API_BASE}${url}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...NGROK_H },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(8000)
     });

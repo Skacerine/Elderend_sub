@@ -22,7 +22,7 @@ export default function Login() {
     try {
       const res = await fetch(`${API_BASE}/auth/login/elderly`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "1" },
         body: JSON.stringify({ phone, password }),
       });
       if (!res.ok) { setError("Server error, please try again"); setLoading(false); return; }

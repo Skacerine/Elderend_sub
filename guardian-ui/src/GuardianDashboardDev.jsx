@@ -44,7 +44,7 @@ export default function GuardianDashboardDev() {
 
   // Load recent alerts from backend on mount
   useEffect(() => {
-    fetch(`${API_BASE}/alerts?n=20`, { signal: AbortSignal.timeout(6000) })
+    fetch(`${API_BASE}/alerts?n=20`, { headers: { "ngrok-skip-browser-warning": "1" }, signal: AbortSignal.timeout(6000) })
       .then(r => r.ok ? r.json() : [])
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {

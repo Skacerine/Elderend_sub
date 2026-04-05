@@ -7,7 +7,8 @@ async function postJson(path, payload) {
   const response = await fetch(`${BASE_URL}${path}`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      "ngrok-skip-browser-warning": "1"
     },
     body: JSON.stringify(payload)
   });

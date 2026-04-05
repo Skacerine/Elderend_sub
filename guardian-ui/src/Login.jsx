@@ -20,7 +20,7 @@ export default function Login() {
     try {
       const res = await fetch(`${API_BASE}/auth/login/guardian`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "1" },
         body: JSON.stringify({ phone, password }),
       });
       const data = await res.json();

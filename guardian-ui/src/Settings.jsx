@@ -12,7 +12,7 @@ export default function Settings() {
   const [status, setStatus] = useState(null);
 
   useEffect(() => {
-    fetch(`${API_BASE}/settings/notifications`, { signal: AbortSignal.timeout(6000) })
+    fetch(`${API_BASE}/settings/notifications`, { headers: { "ngrok-skip-browser-warning": "1" }, signal: AbortSignal.timeout(6000) })
       .then(r => r.json())
       .then(data => { setPhone(data.phone || ""); setEmail(data.email || ""); })
       .catch(() => {})
@@ -25,7 +25,7 @@ export default function Settings() {
     try {
       const r = await fetch(`${API_BASE}/settings/notifications`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "1" },
         body: JSON.stringify({ phone, email })
       });
       if (r.ok) setStatus({ ok: true, msg: "Saved!" });

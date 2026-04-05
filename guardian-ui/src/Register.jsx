@@ -40,7 +40,7 @@ export default function Register() {
     try {
       const res = await fetch(`${API_BASE}/auth/register`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "1" },
         body: JSON.stringify({
           guardian: { guardian_name: gName, guardian_contact: gContact, password: gPassword },
           elderly: { elderly_name: eName, elderly_contact: eContact, residential_address: eAddress, password: ePassword },

@@ -15,9 +15,11 @@ const TRACKING_MODES = [
   { id: "on-demand", name: "On-Demand", desc: "Manual refresh only", interval: null }
 ];
 
+const NGROK_H = { "ngrok-skip-browser-warning": "1" };
+
 async function get(url) {
   try {
-    const r = await fetch(`${API_BASE}${url}`, { signal: AbortSignal.timeout(6000) });
+    const r = await fetch(`${API_BASE}${url}`, { headers: NGROK_H, signal: AbortSignal.timeout(6000) });
     return r.ok ? r.json() : null;
   } catch { return null; }
 }
@@ -26,7 +28,7 @@ async function post(url, body = {}) {
   try {
     const r = await fetch(`${API_BASE}${url}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...NGROK_H },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(8000)
     });

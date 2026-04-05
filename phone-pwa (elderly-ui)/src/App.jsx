@@ -250,6 +250,15 @@ export default function App() {
       <div className="ea-keep-open">
         Keep this app open for fall protection
       </div>
+
+      {/* Logout */}
+      <button onClick={() => { monitor.stop(); logout(); }} style={{
+        margin: "16px auto", display: "block", padding: "10px 24px",
+        background: "none", border: "1px solid #d1d5db", borderRadius: 10,
+        color: "#6b7280", fontSize: "14px", cursor: "pointer"
+      }}>
+        Sign Out
+      </button>
     </div>
   );
 }

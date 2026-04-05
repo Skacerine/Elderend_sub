@@ -17,7 +17,7 @@ const allowedOrigins = [
   "http://localhost:5174",
   "https://guardianphonedropper.vercel.app",
   "https://phonedropper9000-xi.vercel.app",
-  "https://ignacia-cymbocephalic-shela.ngrok-free.dev",
+
   process.env.GUARDIAN_UI_URL,
   process.env.PHONE_PWA_URL
 ].filter(Boolean);

@@ -46,6 +46,7 @@ export default function ElderWatch() {
   const trailData = useRef([]);
   const homeMarkerRef = useRef(null);
   const homeCircleRef = useRef(null);
+
   const [home, setHomeRaw] = useState(() => {
     try { const s = JSON.parse(localStorage.getItem("ew_home")); if (s?.lat && s?.lng) return s; } catch {} return DEFAULT_HOME;
   });
@@ -55,6 +56,7 @@ export default function ElderWatch() {
   const setHome = (v) => { setHomeRaw(v); localStorage.setItem("ew_home", JSON.stringify(v)); };
   const setRadius = (v) => { setRadiusRaw(v); localStorage.setItem("ew_radius", String(v)); };
   const lastPos = useRef({ lat: home.lat, lng: home.lng });
+
   const [editingHome, setEditingHome] = useState(false);
   const [homeDraft, setHomeDraft] = useState({ lat: String(home.lat), lng: String(home.lng), radius: String(radius), postal: "" });
   const [postalLooking, setPostalLooking] = useState(false);
@@ -140,7 +142,6 @@ export default function ElderWatch() {
     const d = await get("/alerts");
     if (Array.isArray(d) && d.length > 0) {
       setAlerts(prev => {
-        // Only toast if there's a genuinely new alert
         if (d[0]._id && (!prev.length || d[0]._id !== prev[0]?._id)) {
           const a = d[0];
           showToast(a.type, a.type === "left" ? "Left Home Zone" : "Returned Home", a.address || "");
@@ -158,7 +159,7 @@ export default function ElderWatch() {
   // Poll real GPS position from backend
   useEffect(() => {
     const currentMode = TRACKING_MODES.find(m => m.id === mode);
-    if (!currentMode?.interval) return; // on-demand = no auto updates
+    if (!currentMode?.interval) return;
 
     async function pollPosition() {
       const data = await get("/gps/realgps");
@@ -170,6 +171,7 @@ export default function ElderWatch() {
 
       const currentDist = Math.round(haversine(home.lat, home.lng, newLat, newLng));
       const isHome = currentDist <= radius;
+
       setStatusText(prev => {
         const prevStatus = prev;
 
@@ -201,10 +203,9 @@ export default function ElderWatch() {
       if (trailData.current.length > 1 && mapInstance.current) {
         trailRef.current = L.polyline(trailData.current, { color: "#3b82f6", weight: 2, opacity: 0.4, dashArray: "5 4" }).addTo(mapInstance.current);
       }
-
     }
 
-    pollPosition(); // fetch immediately on mount
+    pollPosition();
     const interval = setInterval(pollPosition, Math.min(currentMode.interval, 3000));
     return () => clearInterval(interval);
   }, [mode, showToast, home, radius]);
@@ -284,7 +285,7 @@ export default function ElderWatch() {
       </div>
 
       <div className="ew-main">
-        {/* Map — takes up left + center area */}
+        {/* Map */}
         <div className="ew-center" style={{ flex: 1 }}>
           <div ref={mapRef} className="ew-map" />
           <div className="ew-map-badge">
@@ -313,25 +314,6 @@ export default function ElderWatch() {
             {lastUpdate && (
               <div style={{ textAlign: "center", fontSize: "0.65rem", color: "var(--muted-2)", marginTop: 4 }}>
                 Last update: {fmtTime(lastUpdate)}
-              </div>
-            )}
-          </div>
-
-          {/* Status Service */}
-          <div className="ew-card">
-            <div className="ew-card-label">STATUS SERVICE</div>
-            <div style={{ fontSize: "0.8rem", color: "var(--muted)", lineHeight: 1.5, marginBottom: 6 }}>
-              {addressData?.address || "Fetching location..."}
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", fontFamily: "var(--font-mono)" }}>
-              <span style={{ color: "var(--cyan)" }}>{addressData?.lastSeenAge || "-"}</span>
-              <span style={{ color: addressData?.isSafe ? "var(--green)" : addressData ? "var(--red)" : "var(--muted-2)" }}>
-                {addressData?.isSafe ? "Safe" : addressData ? "Outside zone" : "-"}
-              </span>
-            </div>
-            {addressData?.distanceLabel && (
-              <div style={{ fontSize: "0.7rem", color: "var(--muted-2)", marginTop: 4 }}>
-                Distance: {addressData.distanceLabel}
               </div>
             )}
           </div>
@@ -410,6 +392,25 @@ export default function ElderWatch() {
                   setEditingHome(true);
                 }}>Edit Home</button>
               </>
+            )}
+          </div>
+
+          {/* Status Service */}
+          <div className="ew-card">
+            <div className="ew-card-label">STATUS SERVICE</div>
+            <div style={{ fontSize: "0.8rem", color: "var(--muted)", lineHeight: 1.5, marginBottom: 6 }}>
+              {addressData?.address || "Fetching location..."}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", fontFamily: "var(--font-mono)" }}>
+              <span style={{ color: "var(--cyan)" }}>{addressData?.lastSeenAge || "-"}</span>
+              <span style={{ color: addressData?.isSafe ? "var(--green)" : addressData ? "var(--red)" : "var(--muted-2)" }}>
+                {addressData?.isSafe ? "Safe" : addressData ? "Outside zone" : "-"}
+              </span>
+            </div>
+            {addressData?.distanceLabel && (
+              <div style={{ fontSize: "0.7rem", color: "var(--muted-2)", marginTop: 4 }}>
+                Distance: {addressData.distanceLabel}
+              </div>
             )}
           </div>
 

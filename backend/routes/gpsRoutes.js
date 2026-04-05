@@ -193,8 +193,27 @@ router.post("/config", (req, res) => {
   res.json({ success: true, ...simCfg, elderlyId: meta.elderlyId, intervalMs: intervalMs() });
 });
 
+// ── NEW: Radius update endpoint ──
+// POST /gps/radius  { radius: <number 10–500> }
+// Updates the safe-zone radius used for geofence checks and returns the new value.
+router.post("/radius", (req, res) => {
+  const r = Number(req.body.radius);
+  if (!Number.isFinite(r) || r < 10 || r > 500)
+    return res.status(400).json({ error: "radius must be a number between 10 and 500" });
+  meta.radius = Math.round(r);
+  console.log(`[GPS] Safe-zone radius updated → ${meta.radius}m`);
+  // Push an immediate position update so the new radius takes effect right away
+  push();
+  res.json({ success: true, radius: meta.radius });
+});
+
+// GET /gps/radius — read current radius
+router.get("/radius", (_req, res) =>
+  res.json({ radius: meta.radius })
+);
+
 router.get("/simconfig", (_req, res) =>
-  res.json({ ...simCfg, intervalMs: intervalMs() })
+  res.json({ ...simCfg, radius: meta.radius, intervalMs: intervalMs() })
 );
 
 router.post("/start", (_req, res) => {

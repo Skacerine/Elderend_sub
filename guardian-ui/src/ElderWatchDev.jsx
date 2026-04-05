@@ -68,6 +68,8 @@ export default function ElderWatchDev() {
   const [popupAlert, setPopupAlert] = useState(null);
   const lastAlertId = useRef(null);
 
+
+
   // Toast helper
   const showToast = useCallback((type, message, sub) => {
     const id = Date.now();
@@ -341,6 +343,7 @@ export default function ElderWatchDev() {
             <div style={{ textAlign: "center", marginTop: 4, fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--yellow)", fontWeight: 700 }}>{speed}x</div>
           </div>
 
+          {/* Safe Zone Radius */}
           {/* D-Pad */}
           <div className="ew-card">
             <div className="ew-card-label">Move Elderly</div>

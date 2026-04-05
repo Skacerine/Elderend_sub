@@ -62,7 +62,7 @@ All 4 atomic services listed above are built and exposed on OutSystems:
 | **SMU Lab Utilities SMS API** | Sends SMS messages to a phone number | Scenarios 1, 2, 3 | `notification_ms/server.js` -> `SendSMS` endpoint |
 | **SMU Lab Utilities Email API** | Sends HTML emails | Scenarios 2, 3 | `notification_ms/server.js` -> `SendEmail` endpoint |
 | **OneMap Singapore API** | Geocodes Singapore postal codes to lat/lng | Scenario 2 (home location setup) | `guardian-ui/src/ElderWatch.jsx` -> OneMap elastic search |
-| **Browser Geolocation API** | Real GPS tracking on elderly's phone | Scenario 2 | `phone-pwa/src/App.jsx` -> `navigator.geolocation.watchPosition()` |
+| **Browser Geolocation API** | Real GPS tracking on elderly's phone | Scenario 2 | `phone-pwa (elderly-ui)/src/App.jsx` -> `navigator.geolocation.watchPosition()` |
 | **Healthcare Provider (Mock)** | Simulated healthcare dispatch | Scenario 1 | OutSystems: `https://personal-s93qqbah.outsystemscloud.com/HealthCare/rest/Dispatch` |
 
 ---
@@ -214,7 +214,7 @@ All inter-service communication uses JSON:
 | auth_ms | `auth_ms/Dockerfile` | 4004 |
 | notification_ms | `notification_ms/Dockerfile` | 4005 |
 | guardian-ui | `guardian-ui/Dockerfile` | 5173 |
-| phone-pwa | `phone-pwa/Dockerfile` | 5174 |
+| phone-pwa | `phone-pwa (elderly-ui)/Dockerfile` | 5174 |
 
 ---
 
@@ -245,8 +245,8 @@ All inter-service communication uses JSON:
 | **WebSocket Real-Time Alerts** | Fall detection alerts broadcast instantly to all connected Guardian UI clients via WebSocket | `alert_ms/server.js` (WS server), `gateway_ms/server.js` (WS proxy) | Real-time push is critical for fall emergencies — polling would introduce unacceptable delay. |
 | **Server-Sent Events (SSE)** | Geofence alerts streamed to Guardian UI via SSE with heartbeat | `alert_ms/server.js` (`/alerts/stream` endpoint) | SSE provides efficient one-way push for geofence status updates without WebSocket overhead. |
 | **Fall Detection Scoring Algorithm** | Multi-feature risk scoring based on accelerometer, gyroscope, and post-impact stillness data | `alert_ms/server.js` (`scoreDropRisk()`) | Custom algorithm evaluating 4 sensor features with weighted scoring to determine fall severity (FALLEN/NORMAL/ATREST). |
-| **Browser Motion Sensor Integration** | Device accelerometer and gyroscope monitoring in the Phone PWA | `phone-pwa/src/motionSensor.js` | Leverages `DeviceMotionEvent` API to collect real sensor data from the elderly's phone for fall detection. |
-| **Real GPS Tracking** | Continuous GPS position tracking using browser Geolocation API | `phone-pwa/src/App.jsx` (`navigator.geolocation.watchPosition()`) | Provides actual GPS coordinates from the elderly's device, sent to backend every 10 seconds. |
+| **Browser Motion Sensor Integration** | Device accelerometer and gyroscope monitoring in the Phone PWA | `phone-pwa (elderly-ui)/src/motionSensor.js` | Leverages `DeviceMotionEvent` API to collect real sensor data from the elderly's phone for fall detection. |
+| **Real GPS Tracking** | Continuous GPS position tracking using browser Geolocation API | `phone-pwa (elderly-ui)/src/App.jsx` (`navigator.geolocation.watchPosition()`) | Provides actual GPS coordinates from the elderly's device, sent to backend every 10 seconds. |
 | **Haversine Geofencing** | Mathematical distance calculation for geofence boundary detection | `gps_ms/server.js` (`haversine()` function) | Accurately calculates real-world distance in meters between two GPS coordinates on Earth's surface. |
 | **OneMap Postal Code Geocoding** | Singapore postal code to lat/lng conversion via OneMap API | `guardian-ui/src/ElderWatch.jsx` | Allows guardians to set home location by postal code instead of manually entering coordinates. |
 

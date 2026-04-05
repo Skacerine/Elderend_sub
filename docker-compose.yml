@@ -129,7 +129,7 @@ services:
     restart: unless-stopped
 
   phone-pwa:
-    build: ./phone-pwa
+    build: "./phone-pwa (elderly-ui)"
     container_name: phone-pwa
     ports:
       - "5174:5174"

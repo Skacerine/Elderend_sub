@@ -6,7 +6,6 @@ import { connectToAlerts } from "./socket";
 import { useAuth } from "./AuthContext";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
-
 const DEFAULT_HOME = { lat: 1.35305, lng: 103.94402 };
 const DEFAULT_RADIUS = 500;
 
@@ -25,7 +24,7 @@ async function post(url, body = {}) {
       method: "POST",
       headers: { "Content-Type": "application/json", ...NGROK_H },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(8000)
+      signal: AbortSignal.timeout(8000),
     });
     return r.json();
   } catch { return null; }
@@ -45,14 +44,14 @@ export default function ElderWatchDev() {
   const homeCircleRef = useRef(null);
 
   const [home, setHomeRaw] = useState(() => {
-    try { const s = JSON.parse(localStorage.getItem("ew_home")); if (s?.lat && s?.lng) return s; } catch {} return DEFAULT_HOME;
+    try { const s = JSON.parse(localStorage.getItem("ew_home")); if (s?.lat && s?.lng) return s; } catch {}
+    return DEFAULT_HOME;
   });
   const [radius, setRadiusRaw] = useState(() => {
-    const s = parseInt(localStorage.getItem("ew_radius"), 10); return s >= 10 ? s : DEFAULT_RADIUS;
+    const s = parseInt(localStorage.getItem("ew_radius"), 10);
+    return s >= 10 ? s : DEFAULT_RADIUS;
   });
 
-  // Persist to localStorage and sync home/radius to backend so the status
-  // service always evaluates "isSafe" against the guardian-configured location.
   const setHome = (v) => { setHomeRaw(v); localStorage.setItem("ew_home", JSON.stringify(v)); };
   const setRadius = (v) => { setRadiusRaw(v); localStorage.setItem("ew_radius", String(v)); };
 
@@ -74,15 +73,13 @@ export default function ElderWatchDev() {
   const [popupAlert, setPopupAlert] = useState(null);
   const lastAlertId = useRef(null);
 
-  // Toast helper
   const showToast = useCallback((type, message, sub) => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, type, message, sub }]);
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 7000);
   }, []);
 
-  // Sync the stored home/radius to the backend on first mount so the status
-  // service reflects any home previously saved by the guardian.
+  // Sync stored home/radius to this elderly's backend state on mount.
   useEffect(() => {
     post("/gps/config", {
       home: { lat: home.lat, lng: home.lng },
@@ -91,45 +88,40 @@ export default function ElderWatchDev() {
       guardianId: user?.guardianId,
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // intentionally runs once on mount
+  }, []);
 
   // Init map
   useEffect(() => {
     if (mapInstance.current) return;
     const map = L.map(mapRef.current, { zoomControl: false }).setView([DEFAULT_HOME.lat, DEFAULT_HOME.lng], 16);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "&copy; OpenStreetMap"
-    }).addTo(map);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap" }).addTo(map);
     L.control.zoom({ position: "bottomright" }).addTo(map);
 
     const homeIcon = L.divIcon({
       html: `<div style="background:#fff;border:2px solid #2d7a50;border-radius:8px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 2px 8px rgba(45,122,80,.25)">&#x1f475;</div>`,
-      iconSize: [24, 24], iconAnchor: [12, 12], className: ""
+      iconSize: [24, 24], iconAnchor: [12, 12], className: "",
     });
     homeMarkerRef.current = L.marker([DEFAULT_HOME.lat, DEFAULT_HOME.lng], { icon: homeIcon }).addTo(map).bindPopup(`<b>Home Base</b><br>Boundary: ${DEFAULT_RADIUS}m`);
     homeCircleRef.current = L.circle([DEFAULT_HOME.lat, DEFAULT_HOME.lng], {
-      radius: DEFAULT_RADIUS, color: "#2d7a50", fillColor: "#2d7a50",
-      fillOpacity: 0.06, weight: 1.5, dashArray: "6 4"
+      radius: DEFAULT_RADIUS, color: "#2d7a50", fillColor: "#2d7a50", fillOpacity: 0.06, weight: 1.5, dashArray: "6 4",
     }).addTo(map);
 
     const elIcon = L.divIcon({
       html: `<div style="background:#d45a5a;border:3px solid #fff;border-radius:50%;width:18px;height:18px;box-shadow:0 0 0 3px rgba(212,90,90,.25),0 2px 6px rgba(0,0,0,.15)"></div>`,
-      iconSize: [18, 18], iconAnchor: [9, 9], className: ""
+      iconSize: [18, 18], iconAnchor: [9, 9], className: "",
     });
     const marker = L.marker([DEFAULT_HOME.lat, DEFAULT_HOME.lng], { icon: elIcon, draggable: true, title: elderlyLabel });
     marker.addTo(map).bindPopup(`<b>${elderlyLabel}</b>`);
+    // Drag-to-move — always sends this elderly's ID
     marker.on("dragend", async (e) => {
       const { lat, lng } = e.target.getLatLng();
       await post("/gps/devicegps/position", { lat, lng, elderlyId: ELDERLY_ID });
     });
-
     markerRef.current = marker;
     mapInstance.current = map;
-
     return () => { map.remove(); mapInstance.current = null; };
   }, []);
 
-  // Update home marker and circle when home/radius changes
   useEffect(() => {
     if (homeMarkerRef.current) {
       homeMarkerRef.current.setLatLng([home.lat, home.lng]);
@@ -139,12 +131,9 @@ export default function ElderWatchDev() {
       homeCircleRef.current.setLatLng([home.lat, home.lng]);
       homeCircleRef.current.setRadius(radius);
     }
-    if (mapInstance.current) {
-      mapInstance.current.panTo([home.lat, home.lng]);
-    }
+    if (mapInstance.current) mapInstance.current.panTo([home.lat, home.lng]);
   }, [home, radius]);
 
-  // Update map marker
   const updateMarker = useCallback((d) => {
     if (!d || !markerRef.current) return;
     markerRef.current.setLatLng([d.lat, d.lng]);
@@ -159,12 +148,6 @@ export default function ElderWatchDev() {
     }
   }, []);
 
-  // Sync elderly ID to backend GPS simulation on mount
-  useEffect(() => {
-    post("/gps/config", { elderlyId: ELDERLY_ID, guardianId: user?.guardianId });
-  }, [ELDERLY_ID]);
-
-  // Fetch coordinate history
   const fetchHistory = useCallback(async () => {
     const d = await get(`/elderlylog/${ELDERLY_ID}?n=60`);
     if (Array.isArray(d)) setHistory(d);
@@ -178,22 +161,19 @@ export default function ElderWatchDev() {
       const s = await get(`/status/${ELDERLY_ID}`);
       if (s && !s.error) setAddressData(s);
     }
-
     async function fetchAlerts() {
       const d = await get("/alerts");
       if (Array.isArray(d)) {
-        const mine = d.filter(a => String(a.elderlyId) === String(ELDERLY_ID));
-        setAlerts(mine);
-        if (mine.length && mine[0]._id !== lastAlertId.current) {
-          lastAlertId.current = mine[0]._id;
-          const a = mine[0];
+        setAlerts(d);
+        if (d.length && d[0]._id !== lastAlertId.current) {
+          lastAlertId.current = d[0]._id;
+          const a = d[0];
           showToast(a.type, a.type === "left" ? "Left Home Zone" : "Returned Home", a.address || "");
         }
       }
       const n = await get("/notifications");
       if (Array.isArray(n)) setAmqpLog(n);
     }
-
     async function fetchHealth() {
       const endpoints = {
         "GPS Svc": "/gps/health",
@@ -201,7 +181,7 @@ export default function ElderWatchDev() {
         "Alert Svc": "/alerts/health",
         "Notify Gdn": "/notifications/health",
         "Map Display": "/drawmap/health",
-        "Status Svc": "/status/health"
+        "Status Svc": "/status/health",
       };
       const results = {};
       await Promise.allSettled(
@@ -212,75 +192,73 @@ export default function ElderWatchDev() {
       );
       setHealth(results);
     }
-
     async function fetchReplay() {
       const d = await get(`/gps/replay/status?elderlyId=${ELDERLY_ID}`);
       if (d) setReplayState(d);
     }
 
-    fetchData();
-    fetchAlerts();
-    fetchHealth();
-    fetchHistory();
-
+    fetchData(); fetchAlerts(); fetchHealth(); fetchHistory();
     const dataTimer = setInterval(fetchData, 5000);
     const alertTimer = setInterval(() => { fetchAlerts(); fetchReplay(); }, 3000);
     const healthTimer = setInterval(fetchHealth, 5000);
     const historyTimer = setInterval(fetchHistory, 5000);
-
     return () => {
-      clearInterval(dataTimer);
-      clearInterval(alertTimer);
-      clearInterval(healthTimer);
-      clearInterval(historyTimer);
+      clearInterval(dataTimer); clearInterval(alertTimer);
+      clearInterval(healthTimer); clearInterval(historyTimer);
     };
   }, [updateMarker, showToast, fetchHistory]);
 
-  // WebSocket listener for fall detection alerts
   useEffect(() => {
     const ws = connectToAlerts({
       onMessage: (message) => {
         if (message.type === "drop_alert") {
           const alertData = message.data || message.incident || {};
-          if (String(alertData.elderlyId) !== String(ELDERLY_ID)) return;
           setPopupAlert({
             source: "guardian",
             elderlyId: alertData.elderlyId || "—",
             score: alertData.score,
             severity: alertData.severity,
             message: alertData.message,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           });
         }
-      }
+      },
     });
     return () => ws.close();
   }, []);
 
-  // Controls
+  // Controls — all pass elderlyId so they only affect this account
   async function setMode(m) {
     setModeState(m);
     await post("/gps/config", { mode: m, speed, elderlyId: ELDERLY_ID });
     await fetchHistory();
   }
-
   async function setSpeed(s) {
     setSpeedState(s);
     await post("/gps/config", { mode, speed: s, elderlyId: ELDERLY_ID });
   }
-
   async function toggleTracking() {
     const next = !running;
     setRunning(next);
     await post(next ? "/gps/start" : "/gps/stop", { elderlyId: ELDERLY_ID });
     if (next) await fetchHistory();
   }
-
-  async function move(dLat, dLng) { await post("/gps/devicegps/move", { dLat, dLng, elderlyId: ELDERLY_ID }); await fetchHistory(); }
-  async function goHome() { await post("/gps/devicegps/home", { elderlyId: ELDERLY_ID }); await fetchHistory(); }
-  async function randomWalk() { await post("/gps/devicegps/random", { elderlyId: ELDERLY_ID }); await fetchHistory(); }
-  async function onDemandFetch() { await post("/gps/devicegps/push", { elderlyId: ELDERLY_ID }); await fetchHistory(); }
-
+  async function move(dLat, dLng) {
+    await post("/gps/devicegps/move", { dLat, dLng, elderlyId: ELDERLY_ID });
+    await fetchHistory();
+  }
+  async function goHome() {
+    await post("/gps/devicegps/home", { elderlyId: ELDERLY_ID });
+    await fetchHistory();
+  }
+  async function randomWalk() {
+    await post("/gps/devicegps/random", { elderlyId: ELDERLY_ID });
+    await fetchHistory();
+  }
+  async function onDemandFetch() {
+    await post("/gps/devicegps/push", { elderlyId: ELDERLY_ID });
+    await fetchHistory();
+  }
   async function startReplay(scenario) {
     const stepMs = Math.max(800, Math.round(4000 / Math.max(1, speed)));
     const result = await post("/gps/replay/start", { scenario, stepMs, elderlyId: ELDERLY_ID });
@@ -289,13 +267,11 @@ export default function ElderWatchDev() {
       setReplayState({ active: true, scenario, step: 0, total: result.steps, progress: 0 });
     }
   }
-
   async function stopReplay() {
     await post("/gps/replay/stop", { elderlyId: ELDERLY_ID });
     setReplayState({ active: false });
   }
 
-  // Save home — persists locally, updates map, and syncs to backend
   function handleSaveHome() {
     const lat = parseFloat(homeDraft.lat);
     const lng = parseFloat(homeDraft.lng);
@@ -304,24 +280,16 @@ export default function ElderWatchDev() {
       setHome({ lat, lng });
       setRadius(r);
       setEditingHome(false);
-      // Push the updated home location and radius to the backend so the status
-      // service computes isSafe and distance against the correct home.
-      post("/gps/config", {
-        home: { lat, lng },
-        radius: r,
-        elderlyId: ELDERLY_ID,
-        guardianId: user?.guardianId,
-      });
+      post("/gps/config", { home: { lat, lng }, radius: r, elderlyId: ELDERLY_ID, guardianId: user?.guardianId });
       showToast("info", "Home Updated", `${lat.toFixed(5)}, ${lng.toFixed(5)} — ${r}m`);
     }
   }
 
   const isHome = statusData?.status === "Home";
-  const fmtTime = (ts) => ts ? new Date(ts).toLocaleTimeString("en-SG", { hour12: false }) : "-";
+  const fmtTime = ts => ts ? new Date(ts).toLocaleTimeString("en-SG", { hour12: false }) : "-";
 
   return (
     <div className="ew-app">
-      {/* Toasts */}
       <div className="ew-toast-wrap">
         {toasts.map(t => (
           <div key={t.id} className={`ew-toast ew-toast--${t.type}`} onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}>
@@ -331,7 +299,6 @@ export default function ElderWatchDev() {
         ))}
       </div>
 
-      {/* Header */}
       <div className="ew-header">
         <div className="ew-logo">ElderWatch (Dev)</div>
         <span className="ew-badge ew-badge--amber">{speed}x</span>
@@ -353,7 +320,6 @@ export default function ElderWatchDev() {
       <div className="ew-main">
         {/* Left sidebar */}
         <div className="ew-left">
-          {/* Tracking mode */}
           <div className="ew-card">
             <div className="ew-card-label">Tracking Mode</div>
             {[["standard", "Standard", "Push every 5 min"], ["always-on", "Always-On", "Push every 2 sec"], ["on-demand", "On-Demand", "Manual trigger only"]].map(([m, name, sub]) => (
@@ -371,7 +337,6 @@ export default function ElderWatchDev() {
             </div>
           </div>
 
-          {/* Speed */}
           <div className="ew-card">
             <div className="ew-card-label">Simulation Speed</div>
             <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: "0.75rem", color: "var(--muted-2)" }}>
@@ -382,7 +347,6 @@ export default function ElderWatchDev() {
             <div style={{ textAlign: "center", marginTop: 4, fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--yellow)", fontWeight: 700 }}>{speed}x</div>
           </div>
 
-          {/* D-Pad */}
           <div className="ew-card">
             <div className="ew-card-label">Move Elderly</div>
             <div className="ew-dpad">
@@ -398,7 +362,6 @@ export default function ElderWatchDev() {
             </div>
           </div>
 
-          {/* Replay */}
           <div className="ew-card">
             <div className="ew-card-label">Scenario Replay</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -428,7 +391,6 @@ export default function ElderWatchDev() {
 
         {/* Right sidebar */}
         <div className="ew-right">
-          {/* Status */}
           <div className="ew-card" style={{ borderColor: statusData ? (isHome ? "rgba(45,122,80,.3)" : "rgba(212,90,90,.3)") : undefined }}>
             <div className="ew-card-label">TRACKING TARGET</div>
             <div style={{ fontWeight: 700, fontFamily: "var(--font-mono)", fontSize: "0.85rem" }}>{elderlyLabel}</div>
@@ -444,7 +406,7 @@ export default function ElderWatchDev() {
             </div>
           </div>
 
-          {/* Home Settings */}
+          {/* Home Location */}
           <div className="ew-card">
             <div className="ew-card-label">HOME LOCATION</div>
             {editingHome ? (
@@ -454,15 +416,12 @@ export default function ElderWatchDev() {
                     Postal Code
                     <div style={{ display: "flex", gap: 4, marginTop: 2, minWidth: 0 }}>
                       <input
-                        type="text"
-                        placeholder="e.g. 530123"
-                        value={homeDraft.postal}
+                        type="text" placeholder="e.g. 530123" value={homeDraft.postal}
                         onChange={e => setHomeDraft(d => ({ ...d, postal: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
                         style={{ flex: 1, minWidth: 0, padding: "4px 6px", background: "var(--panel-soft, #1a1a2e)", border: "1px solid var(--border)", borderRadius: 4, color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: "0.75rem" }}
                       />
                       <button
-                        type="button"
-                        className="ew-btn ew-btn--primary"
+                        type="button" className="ew-btn ew-btn--primary"
                         disabled={homeDraft.postal.length !== 6 || postalLooking}
                         style={{ fontSize: "0.7rem", padding: "4px 8px", flexShrink: 0, whiteSpace: "nowrap" }}
                         onClick={async () => {
@@ -475,12 +434,7 @@ export default function ElderWatchDev() {
                             const data = await r.json();
                             if (data.results?.length > 0) {
                               const res = data.results[0];
-                              // Populate lat/lng from postal lookup so the user can review before saving
-                              setHomeDraft(d => ({
-                                ...d,
-                                lat: String(res.LATITUDE),
-                                lng: String(res.LONGITUDE),
-                              }));
+                              setHomeDraft(d => ({ ...d, lat: String(res.LATITUDE), lng: String(res.LONGITUDE) }));
                               showToast("info", "Address Found", res.ADDRESS || res.SEARCHVAL);
                             } else {
                               showToast("left", "Not Found", "No results for this postal code");
@@ -488,9 +442,7 @@ export default function ElderWatchDev() {
                           } catch { showToast("left", "Lookup Failed", "Could not reach OneMap"); }
                           setPostalLooking(false);
                         }}
-                      >
-                        {postalLooking ? "..." : "Lookup"}
-                      </button>
+                      >{postalLooking ? "..." : "Lookup"}</button>
                     </div>
                   </label>
                   <label style={{ color: "var(--muted)" }}>
@@ -542,7 +494,7 @@ export default function ElderWatchDev() {
             <div className="ew-detail-row"><span>Updated</span><span className="ew-mono">{fmtTime(statusData?.timestamp)}</span></div>
           </div>
 
-          {/* Status service data */}
+          {/* Status Service */}
           <div className="ew-card">
             <div className="ew-card-label">Status Service</div>
             <div style={{ fontSize: "0.8rem", color: "var(--muted)", lineHeight: 1.5 }}>{addressData?.address || "Loading..."}</div>
@@ -554,7 +506,7 @@ export default function ElderWatchDev() {
             </div>
           </div>
 
-          {/* Quick actions */}
+          {/* Quick Actions */}
           <div className="ew-card">
             <div className="ew-card-label">Quick Actions</div>
             <button className="ew-btn ew-btn--primary" style={{ width: "100%", marginBottom: 4 }} onClick={onDemandFetch}>On-Demand Location Pull</button>

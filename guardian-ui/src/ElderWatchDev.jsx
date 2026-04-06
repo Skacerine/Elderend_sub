@@ -50,8 +50,12 @@ export default function ElderWatchDev() {
   const [radius, setRadiusRaw] = useState(() => {
     const s = parseInt(localStorage.getItem("ew_radius"), 10); return s >= 10 ? s : DEFAULT_RADIUS;
   });
+
+  // Persist to localStorage and sync home/radius to backend so the status
+  // service always evaluates "isSafe" against the guardian-configured location.
   const setHome = (v) => { setHomeRaw(v); localStorage.setItem("ew_home", JSON.stringify(v)); };
   const setRadius = (v) => { setRadiusRaw(v); localStorage.setItem("ew_radius", String(v)); };
+
   const [editingHome, setEditingHome] = useState(false);
   const [homeDraft, setHomeDraft] = useState({ lat: String(home.lat), lng: String(home.lng), radius: String(radius), postal: "" });
   const [postalLooking, setPostalLooking] = useState(false);
@@ -70,14 +74,24 @@ export default function ElderWatchDev() {
   const [popupAlert, setPopupAlert] = useState(null);
   const lastAlertId = useRef(null);
 
-
-
   // Toast helper
   const showToast = useCallback((type, message, sub) => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, type, message, sub }]);
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 7000);
   }, []);
+
+  // Sync the stored home/radius to the backend on first mount so the status
+  // service reflects any home previously saved by the guardian.
+  useEffect(() => {
+    post("/gps/config", {
+      home: { lat: home.lat, lng: home.lng },
+      radius,
+      elderlyId: ELDERLY_ID,
+      guardianId: user?.guardianId,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // intentionally runs once on mount
 
   // Init map
   useEffect(() => {
@@ -279,6 +293,27 @@ export default function ElderWatchDev() {
     setReplayState({ active: false });
   }
 
+  // Save home — persists locally, updates map, and syncs to backend
+  function handleSaveHome() {
+    const lat = parseFloat(homeDraft.lat);
+    const lng = parseFloat(homeDraft.lng);
+    const r = parseInt(homeDraft.radius, 10);
+    if (!isNaN(lat) && !isNaN(lng) && !isNaN(r) && r >= 10) {
+      setHome({ lat, lng });
+      setRadius(r);
+      setEditingHome(false);
+      // Push the updated home location and radius to the backend so the status
+      // service computes isSafe and distance against the correct home.
+      post("/gps/config", {
+        home: { lat, lng },
+        radius: r,
+        elderlyId: ELDERLY_ID,
+        guardianId: user?.guardianId,
+      });
+      showToast("info", "Home Updated", `${lat.toFixed(5)}, ${lng.toFixed(5)} — ${r}m`);
+    }
+  }
+
   const isHome = statusData?.status === "Home";
   const fmtTime = (ts) => ts ? new Date(ts).toLocaleTimeString("en-SG", { hour12: false }) : "-";
 
@@ -345,7 +380,6 @@ export default function ElderWatchDev() {
             <div style={{ textAlign: "center", marginTop: 4, fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: "var(--yellow)", fontWeight: 700 }}>{speed}x</div>
           </div>
 
-          {/* Safe Zone Radius */}
           {/* D-Pad */}
           <div className="ew-card">
             <div className="ew-card-label">Move Elderly</div>
@@ -417,23 +451,44 @@ export default function ElderWatchDev() {
                   <label style={{ color: "var(--muted)" }}>
                     Postal Code
                     <div style={{ display: "flex", gap: 4, marginTop: 2, minWidth: 0 }}>
-                      <input type="text" placeholder="e.g. 530123" value={homeDraft.postal} onChange={e => setHomeDraft(d => ({ ...d, postal: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
-                        style={{ flex: 1, minWidth: 0, padding: "4px 6px", background: "var(--panel-soft, #1a1a2e)", border: "1px solid var(--border)", borderRadius: 4, color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: "0.75rem" }} />
-                      <button type="button" className="ew-btn ew-btn--primary" disabled={homeDraft.postal.length !== 6 || postalLooking} style={{ fontSize: "0.7rem", padding: "4px 8px", flexShrink: 0, whiteSpace: "nowrap" }} onClick={async () => {
-                        setPostalLooking(true);
-                        try {
-                          const r = await fetch(`https://www.onemap.gov.sg/api/common/elastic/search?searchVal=${homeDraft.postal}&returnGeom=Y&getAddrDetails=Y`, { signal: AbortSignal.timeout(6000) });
-                          const data = await r.json();
-                          if (data.results?.length > 0) {
-                            const res = data.results[0];
-                            setHomeDraft(d => ({ ...d, lat: res.LATITUDE, lng: res.LONGITUDE }));
-                            showToast("info", "Address Found", res.ADDRESS || res.SEARCHVAL);
-                          } else {
-                            showToast("left", "Not Found", "No results for this postal code");
-                          }
-                        } catch { showToast("left", "Lookup Failed", "Could not reach OneMap"); }
-                        setPostalLooking(false);
-                      }}>{postalLooking ? "..." : "Lookup"}</button>
+                      <input
+                        type="text"
+                        placeholder="e.g. 530123"
+                        value={homeDraft.postal}
+                        onChange={e => setHomeDraft(d => ({ ...d, postal: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
+                        style={{ flex: 1, minWidth: 0, padding: "4px 6px", background: "var(--panel-soft, #1a1a2e)", border: "1px solid var(--border)", borderRadius: 4, color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: "0.75rem" }}
+                      />
+                      <button
+                        type="button"
+                        className="ew-btn ew-btn--primary"
+                        disabled={homeDraft.postal.length !== 6 || postalLooking}
+                        style={{ fontSize: "0.7rem", padding: "4px 8px", flexShrink: 0, whiteSpace: "nowrap" }}
+                        onClick={async () => {
+                          setPostalLooking(true);
+                          try {
+                            const r = await fetch(
+                              `https://www.onemap.gov.sg/api/common/elastic/search?searchVal=${homeDraft.postal}&returnGeom=Y&getAddrDetails=Y`,
+                              { signal: AbortSignal.timeout(6000) }
+                            );
+                            const data = await r.json();
+                            if (data.results?.length > 0) {
+                              const res = data.results[0];
+                              // Populate lat/lng from postal lookup so the user can review before saving
+                              setHomeDraft(d => ({
+                                ...d,
+                                lat: String(res.LATITUDE),
+                                lng: String(res.LONGITUDE),
+                              }));
+                              showToast("info", "Address Found", res.ADDRESS || res.SEARCHVAL);
+                            } else {
+                              showToast("left", "Not Found", "No results for this postal code");
+                            }
+                          } catch { showToast("left", "Lookup Failed", "Could not reach OneMap"); }
+                          setPostalLooking(false);
+                        }}
+                      >
+                        {postalLooking ? "..." : "Lookup"}
+                      </button>
                     </div>
                   </label>
                   <label style={{ color: "var(--muted)" }}>
@@ -453,17 +508,7 @@ export default function ElderWatchDev() {
                   </label>
                 </div>
                 <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
-                  <button className="ew-btn ew-btn--primary" style={{ flex: 1 }} onClick={() => {
-                    const lat = parseFloat(homeDraft.lat);
-                    const lng = parseFloat(homeDraft.lng);
-                    const r = parseInt(homeDraft.radius, 10);
-                    if (!isNaN(lat) && !isNaN(lng) && !isNaN(r) && r >= 10) {
-                      setHome({ lat, lng });
-                      setRadius(r);
-                      setEditingHome(false);
-                      showToast("info", "Home Updated", `${lat.toFixed(5)}, ${lng.toFixed(5)} — ${r}m`);
-                    }
-                  }}>Save</button>
+                  <button className="ew-btn ew-btn--primary" style={{ flex: 1 }} onClick={handleSaveHome}>Save</button>
                   <button className="ew-btn" style={{ flex: 1 }} onClick={() => {
                     setHomeDraft({ lat: String(home.lat), lng: String(home.lng), radius: String(radius), postal: "" });
                     setEditingHome(false);

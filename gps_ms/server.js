@@ -7,6 +7,13 @@ const PORT = process.env.PORT || 4001;
 const AMQP_URL = process.env.AMQP_URL || "amqp://guest:guest@rabbitmq:5672";
 const ALERT_MS_URL = process.env.ALERT_MS_URL || "http://alert_ms:4002";
 
+// Default home can be overridden via env vars for deployment flexibility
+const DEFAULT_HOME = {
+  lat: parseFloat(process.env.DEFAULT_HOME_LAT) || 1.35305,
+  lng: parseFloat(process.env.DEFAULT_HOME_LNG) || 103.94402,
+};
+const DEFAULT_RADIUS = parseInt(process.env.DEFAULT_RADIUS, 10) || 500;
+
 app.use(cors());
 app.use(express.json());
 
@@ -60,7 +67,7 @@ function haversine(lat1, lng1, lat2, lng2) {
 let amqpChannel = null;
 const EXCHANGE = "elderwatch.geofence";
 
-function checkRadius({ elderlyId, guardianId, lat, lng, address, timestamp, home, radius = 500 }) {
+function checkRadius({ elderlyId, guardianId, lat, lng, address, timestamp, home, radius = DEFAULT_RADIUS }) {
   const latN = parseFloat(lat), lngN = parseFloat(lng);
   const dist = Math.round(haversine(latN, lngN, home.lat, home.lng));
   const status = dist <= radius ? "Home" : "Outside";
@@ -92,10 +99,16 @@ function checkRadius({ elderlyId, guardianId, lat, lng, address, timestamp, home
 }
 
 // ═══ GPS Simulation State ═══
-const HOME = { lat: 1.35305, lng: 103.94402 };
-let position = { lat: HOME.lat, lng: HOME.lng, ts: Date.now() };
-let realPosition = { lat: HOME.lat, lng: HOME.lng, ts: Date.now() };
-const meta = { elderlyId: 1, guardianId: 1, name: "Mdm Tan Ah Kow", home: HOME, radius: 500 };
+// meta.home and meta.radius are the live values — updated via /gps/config
+let position = { lat: DEFAULT_HOME.lat, lng: DEFAULT_HOME.lng, ts: Date.now() };
+let realPosition = { lat: DEFAULT_HOME.lat, lng: DEFAULT_HOME.lng, ts: Date.now() };
+const meta = {
+  elderlyId: 1,
+  guardianId: 1,
+  name: "Mdm Tan Ah Kow",
+  home: { lat: DEFAULT_HOME.lat, lng: DEFAULT_HOME.lng },
+  radius: DEFAULT_RADIUS,
+};
 const simCfg = { mode: "standard", speed: 10, running: true };
 let simTimer = null;
 
@@ -150,12 +163,13 @@ function startReplay(scenarioName, stepMs) {
   stopReplay();
   const steps = SCENARIOS[scenarioName];
   if (!steps) return { error: `Unknown scenario: ${scenarioName}` };
-  position = { lat: HOME.lat, lng: HOME.lng, ts: Date.now() };
+  // Reset position to current meta.home (not a hardcoded constant)
+  position = { lat: meta.home.lat, lng: meta.home.lng, ts: Date.now() };
   replayActive = true; replayScenario = scenarioName; replayStep = 0; replayTotal = steps.length;
   function tick() {
     if (!replayActive || replayStep >= steps.length) { replayActive = false; return; }
     const step = steps[replayStep];
-    position = { lat: HOME.lat + step.dLat, lng: HOME.lng + step.dLng, ts: Date.now() };
+    position = { lat: meta.home.lat + step.dLat, lng: meta.home.lng + step.dLng, ts: Date.now() };
     push(); replayStep++;
     replayTimer = setTimeout(tick, stepMs);
   }
@@ -206,8 +220,9 @@ app.post("/gps/devicegps/move", (req, res) => {
   stopReplay(); position.lat += Number(req.body.dLat || 0); position.lng += Number(req.body.dLng || 0); position.ts = Date.now(); push();
   res.json({ success: true, ...position });
 });
+// Return to current meta.home (not hardcoded) so "Go Home" respects the configured home location
 app.post("/gps/devicegps/home", (_req, res) => {
-  stopReplay(); position = { lat: HOME.lat, lng: HOME.lng, ts: Date.now() }; push();
+  stopReplay(); position = { lat: meta.home.lat, lng: meta.home.lng, ts: Date.now() }; push();
   res.json({ success: true, ...position });
 });
 app.post("/gps/devicegps/random", (_req, res) => {
@@ -216,16 +231,32 @@ app.post("/gps/devicegps/random", (_req, res) => {
   res.json({ success: true, ...position });
 });
 app.post("/gps/devicegps/push", (_req, res) => { push(); res.json({ success: true }); });
+
+// /gps/config now also accepts home (object with lat/lng) and radius so the
+// frontend can keep the backend in sync whenever the guardian changes the home
+// location or safe-zone radius.
 app.post("/gps/config", (req, res) => {
-  const { mode, speed, elderlyId, guardianId } = req.body;
+  const { mode, speed, elderlyId, guardianId, home, radius } = req.body;
   if (mode) simCfg.mode = mode;
   if (speed != null) simCfg.speed = Math.max(1, Number(speed));
   if (elderlyId != null) meta.elderlyId = elderlyId;
   if (guardianId != null) meta.guardianId = guardianId;
+  // Accept home as { lat, lng } — validate before applying
+  if (home && typeof home.lat === "number" && typeof home.lng === "number") {
+    meta.home = { lat: home.lat, lng: home.lng };
+    console.log(`[GPS] Home updated → ${home.lat.toFixed(5)}, ${home.lng.toFixed(5)}`);
+  }
+  if (radius != null) {
+    const r = Number(radius);
+    if (!isNaN(r) && r >= 10) {
+      meta.radius = r;
+      console.log(`[GPS] Radius updated → ${r}m`);
+    }
+  }
   restartTimer();
-  res.json({ success: true, ...simCfg, elderlyId: meta.elderlyId, intervalMs: intervalMs() });
+  res.json({ success: true, ...simCfg, elderlyId: meta.elderlyId, home: meta.home, radius: meta.radius, intervalMs: intervalMs() });
 });
-app.get("/gps/simconfig", (_req, res) => res.json({ ...simCfg, intervalMs: intervalMs() }));
+app.get("/gps/simconfig", (_req, res) => res.json({ ...simCfg, home: meta.home, radius: meta.radius, intervalMs: intervalMs() }));
 app.post("/gps/start", (_req, res) => { simCfg.running = true; push(); restartTimer(); res.json({ success: true, running: true, intervalMs: intervalMs() }); });
 app.post("/gps/stop", (_req, res) => { simCfg.running = false; clearInterval(simTimer); res.json({ success: true, running: false }); });
 app.get("/gps/replay/scenarios", (_req, res) => res.json(Object.entries(SCENARIOS).map(([name, steps]) => ({ name, steps: steps.length }))));

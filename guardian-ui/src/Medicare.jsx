@@ -177,7 +177,12 @@ export default function Medicare() {
   async function handleNotify() {
     if (sending || !meds.length) return;
     setSending(true); setNotifyResult(null);
-    try { setNotifyResult(await api("POST", "/medicine/notify", { elderlyId: ELDERLY_ID, medicines: meds })); } catch { setNotifyResult({ error: "Failed" }); }
+    try {
+      const opts = { method: "POST", headers: { "Content-Type": "application/json", ...NGROK_H }, body: JSON.stringify({ elderlyId: ELDERLY_ID, medicines: meds }), signal: AbortSignal.timeout(60000) };
+      const r = await fetch(`${API_BASE}/medicine/notify`, opts);
+      if (!r.ok) throw new Error(`${r.status}`);
+      setNotifyResult(await r.json());
+    } catch { setNotifyResult({ error: "Failed" }); }
     setSending(false); setTimeout(() => setNotifyResult(null), 6000);
   }
 
@@ -368,11 +373,6 @@ export default function Medicare() {
             </div>
           )}
 
-          {/* Send reminder */}
-          <button className="mc-notify-btn" onClick={handleNotify} disabled={sending || !meds.length}>
-            {sending ? "Sending..." : "Send Reminder (SMS + Email)"}
-          </button>
-          {notifyResult && <div className="mc-notify-result">SMS: {notifyResult.sms?.status || "error"} | Email: {notifyResult.email?.status || "error"}</div>}
         </div>
       )}
 

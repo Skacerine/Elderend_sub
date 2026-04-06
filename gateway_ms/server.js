@@ -53,8 +53,8 @@ const makeProxy = (pathPrefixes, target) =>
     target,
     changeOrigin: true,
     pathFilter: pathPrefixes,
-    timeout: 30000,
-    proxyTimeout: 30000,
+    timeout: 60000,
+    proxyTimeout: 60000,
     on: {
       error: (err, _req, res) => {
         console.error(`[Gateway] Proxy error to ${target}:`, err.message);

@@ -19,8 +19,9 @@ function formatValue(value) {
 }
 
 function severityTone(severity) {
-  if (severity === "HIGH") return "Critical";
-  if (severity === "MEDIUM") return "Elevated";
+  if (severity === "CRITICAL") return "Critical";
+  if (severity === "FALLEN") return "Elevated";
+  if (severity === "NORMAL") return "Normal";
   return "Low";
 }
 
@@ -245,8 +246,8 @@ export default function GuardianDashboard() {
                 <div className="live-title">Current status</div>
                 <div className="live-value">{activeAlert ? severityTone(severity) : "Nominal"}</div>
               </div>
-              <div className={`status-pill ${severity === "HIGH" ? "status-pill--danger" : ""}`}>
-                <span className={`status-dot ${severity === "HIGH" ? "status-dot--red" : "status-dot--green"}`} />
+              <div className={`status-pill ${severity === "CRITICAL" ? "status-pill--danger" : ""}`}>
+                <span className={`status-dot ${severity === "CRITICAL" ? "status-dot--red" : "status-dot--green"}`} />
                 {severityTone(severity)}
               </div>
             </div>

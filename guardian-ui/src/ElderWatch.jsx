@@ -145,15 +145,16 @@ export default function ElderWatch() {
   const fetchAlerts = useCallback(async () => {
     const d = await get("/alerts");
     if (Array.isArray(d) && d.length > 0) {
+      const mine = d.filter(a => String(a.elderlyId) === String(ELDERLY_ID));
       setAlerts(prev => {
-        if (d[0]._id && (!prev.length || d[0]._id !== prev[0]?._id)) {
-          const a = d[0];
+        if (mine.length && mine[0]._id && (!prev.length || mine[0]._id !== prev[0]?._id)) {
+          const a = mine[0];
           showToast(a.type, a.type === "left" ? "Left Home Zone" : "Returned Home", a.address || "");
         }
-        return d;
+        return mine;
       });
     }
-  }, [showToast]);
+  }, [showToast, ELDERLY_ID]);
 
   // Sync mode change — always scoped to this elderly
   useEffect(() => {
@@ -219,6 +220,7 @@ export default function ElderWatch() {
       onMessage: (message) => {
         if (message.type === "drop_alert") {
           const alertData = message.data || message.incident || {};
+          if (String(alertData.elderlyId) !== String(ELDERLY_ID)) return;
           setPopupAlert({
             source: "guardian",
             elderlyId: alertData.elderlyId || "—",

@@ -164,10 +164,11 @@ export default function ElderWatchDev() {
     async function fetchAlerts() {
       const d = await get("/alerts");
       if (Array.isArray(d)) {
-        setAlerts(d);
-        if (d.length && d[0]._id !== lastAlertId.current) {
-          lastAlertId.current = d[0]._id;
-          const a = d[0];
+        const mine = d.filter(a => String(a.elderlyId) === String(ELDERLY_ID));
+        setAlerts(mine);
+        if (mine.length && mine[0]._id !== lastAlertId.current) {
+          lastAlertId.current = mine[0]._id;
+          const a = mine[0];
           showToast(a.type, a.type === "left" ? "Left Home Zone" : "Returned Home", a.address || "");
         }
       }
@@ -213,6 +214,7 @@ export default function ElderWatchDev() {
       onMessage: (message) => {
         if (message.type === "drop_alert") {
           const alertData = message.data || message.incident || {};
+          if (String(alertData.elderlyId) !== String(ELDERLY_ID)) return;
           setPopupAlert({
             source: "guardian",
             elderlyId: alertData.elderlyId || "—",

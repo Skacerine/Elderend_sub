@@ -48,7 +48,8 @@ export default function GuardianDashboardDev() {
       .then(r => r.ok ? r.json() : [])
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
-          const mapped = data.map(a => ({
+          const mine = data.filter(a => String(a.elderlyId) === String(user?.elderlyId));
+          const mapped = mine.map(a => ({
             ...a,
             receivedAt: a.receivedAt || new Date(a.alertTs).toISOString()
           }));

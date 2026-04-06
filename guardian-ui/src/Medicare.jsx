@@ -165,6 +165,7 @@ export default function Medicare() {
       onMessage: (message) => {
         if (message.type === "drop_alert") {
           const d = message.data || message.incident || {};
+          if (String(d.elderlyId) !== String(ELDERLY_ID)) return;
           setPopupAlert({ source: "guardian", elderlyId: d.elderlyId || "-", score: d.score, severity: d.severity, message: d.message, timestamp: new Date().toISOString() });
         }
       }

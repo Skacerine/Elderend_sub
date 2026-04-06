@@ -192,7 +192,7 @@ export default function GuardianDashboard() {
             <div className="brand-left">
               <div className="brand-mark">🛡️</div>
               <div>
-                <div className="brand-title">ElderWatch Guardian Console</div>
+                <div className="brand-title">Elderall - All about your Elderly</div>
                 <div className="brand-subtitle">
                   Real-time fall monitoring and guardian alert system
                 </div>

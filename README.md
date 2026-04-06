@@ -2,6 +2,8 @@
 
 ElderAll is an elderly safety system built on a microservices architecture. It uses a smartphone to detect falls, track location with geofencing, and manage medication schedules. When a fall is detected or a geofence boundary is crossed, the system sends real-time alerts (WebSocket, SSE, SMS, email) to a guardian dashboard.
 
+Please run docker compose up --build
+
 ## Architecture
 
 ```

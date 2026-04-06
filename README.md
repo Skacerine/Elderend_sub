@@ -123,8 +123,9 @@ The total score determines the severity:
 
 | Score | Severity | Action |
 |-------|----------|--------|
-| **>= 100** | `FALLEN` | Alert created, WebSocket broadcast, SMS/email sent, logged to OutSystems |
-| 65 – 99 | `NORMAL` | No alert |
+| **>= 100** | `CRITICAL` | High-risk fall — alert created, WebSocket broadcast, SMS/email sent, logged to OutSystems |
+| **70 – 99** | `FALLEN` | Fall detected — alert created, WebSocket broadcast, SMS/email sent, logged to OutSystems |
+| 50 – 69 | `NORMAL` | No alert |
 | < 50 | `ATREST` | No alert |
 
 ### Flow
@@ -135,7 +136,7 @@ Phone sensor event
   → 450ms collection window
   → POST /motion/sample to alert_ms
   → Server scores features
-  → If score >= 100: create incident → notify guardians via WebSocket, SMS, email
+  → If score >= 70: create incident → notify guardians via WebSocket, SMS, email
 ```
 
 ## Project Structure

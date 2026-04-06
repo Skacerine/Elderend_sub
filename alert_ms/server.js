@@ -64,8 +64,8 @@ function scoreDropRisk(features) {
   if (hadImpact && postImpactStillnessMs > 1000) score += 10;
   if (hadImpact && postImpactStillnessMs > 2000) score += 10;
   let severity = "LOW";
-  if (score >= 100) severity = "FALLEN"; else if (score >= 65) severity = "NORMAL"; else severity = "ATREST";
-  return { detected: score >= 100, score, severity };
+  if (score >= 100) severity = "CRITICAL"; else if (score >= 70) severity = "FALLEN"; else if (score >= 50) severity = "NORMAL"; else severity = "ATREST";
+  return { detected: score >= 70, score, severity };
 }
 
 function createIncident({ elderlyId, deviceId, features, severity, score, message }) {

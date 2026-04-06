@@ -120,7 +120,7 @@ export default function ElderWatchDev() {
     marker.addTo(map).bindPopup(`<b>${elderlyLabel}</b>`);
     marker.on("dragend", async (e) => {
       const { lat, lng } = e.target.getLatLng();
-      await post("/gps/devicegps/position", { lat, lng });
+      await post("/gps/devicegps/position", { lat, lng, elderlyId: ELDERLY_ID });
     });
 
     markerRef.current = marker;
@@ -213,7 +213,7 @@ export default function ElderWatchDev() {
     }
 
     async function fetchReplay() {
-      const d = await get("/gps/replay/status");
+      const d = await get(`/gps/replay/status?elderlyId=${ELDERLY_ID}`);
       if (d) setReplayState(d);
     }
 
@@ -271,18 +271,18 @@ export default function ElderWatchDev() {
   async function toggleTracking() {
     const next = !running;
     setRunning(next);
-    await post(next ? "/gps/start" : "/gps/stop");
+    await post(next ? "/gps/start" : "/gps/stop", { elderlyId: ELDERLY_ID });
     if (next) await fetchHistory();
   }
 
-  async function move(dLat, dLng) { await post("/gps/devicegps/move", { dLat, dLng }); await fetchHistory(); }
-  async function goHome() { await post("/gps/devicegps/home"); await fetchHistory(); }
-  async function randomWalk() { await post("/gps/devicegps/random"); await fetchHistory(); }
-  async function onDemandFetch() { await post("/gps/devicegps/push"); await fetchHistory(); }
+  async function move(dLat, dLng) { await post("/gps/devicegps/move", { dLat, dLng, elderlyId: ELDERLY_ID }); await fetchHistory(); }
+  async function goHome() { await post("/gps/devicegps/home", { elderlyId: ELDERLY_ID }); await fetchHistory(); }
+  async function randomWalk() { await post("/gps/devicegps/random", { elderlyId: ELDERLY_ID }); await fetchHistory(); }
+  async function onDemandFetch() { await post("/gps/devicegps/push", { elderlyId: ELDERLY_ID }); await fetchHistory(); }
 
   async function startReplay(scenario) {
     const stepMs = Math.max(800, Math.round(4000 / Math.max(1, speed)));
-    const result = await post("/gps/replay/start", { scenario, stepMs });
+    const result = await post("/gps/replay/start", { scenario, stepMs, elderlyId: ELDERLY_ID });
     if (result?.success) {
       showToast("replay", `Replay: ${scenario}`, `${result.steps} steps`);
       setReplayState({ active: true, scenario, step: 0, total: result.steps, progress: 0 });
@@ -290,7 +290,7 @@ export default function ElderWatchDev() {
   }
 
   async function stopReplay() {
-    await post("/gps/replay/stop");
+    await post("/gps/replay/stop", { elderlyId: ELDERLY_ID });
     setReplayState({ active: false });
   }
 

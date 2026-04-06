@@ -180,7 +180,7 @@ export default function ElderWatch() {
     if (!currentMode?.interval) return;
 
     async function pollPosition() {
-      const data = await get("/gps/realgps");
+      const data = await get(`/gps/realgps?elderlyId=${ELDERLY_ID}`);
       if (!data || typeof data.lat !== "number") return;
 
       const newLat = data.lat;
@@ -260,7 +260,7 @@ export default function ElderWatch() {
 
   // On-demand fetch
   async function handleOnDemandFetch() {
-    await post("/gps/devicegps/push");
+    await post("/gps/devicegps/push", { elderlyId: ELDERLY_ID });
     const d = await get(`/drawmap/${ELDERLY_ID}`);
     if (d && !d.error && markerRef.current) {
       markerRef.current.setLatLng([d.lat, d.lng]);

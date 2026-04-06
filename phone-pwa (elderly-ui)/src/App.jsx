@@ -64,7 +64,7 @@ export default function App() {
         fetch(`${API_BASE}/gps/realgps`, {
           method: "POST",
           headers: { "Content-Type": "application/json", ...NGROK_HEADERS },
-          body: JSON.stringify({ lat, lng })
+          body: JSON.stringify({ lat, lng, elderlyId })
         }).catch(() => {});
       },
       (err) => console.warn("[GPS] Geolocation error:", err.message),

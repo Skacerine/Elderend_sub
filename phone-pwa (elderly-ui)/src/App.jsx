@@ -82,7 +82,7 @@ export default function App() {
         if (r.ok) {
           const data = await r.json();
           let arr = Array.isArray(data) ? data : [data];
-          arr = arr.map(m => ({ ...m, Stock: m.Quantity ?? m.Stock ?? 0 }));
+          arr = arr.map(m => ({ ...m, Stock: m.Quantity ?? m.Stock ?? 0, ReminderTime: m.ReminderTime || m.Schedule?.[0]?.ReminderTime || null }));
           setMeds(arr.filter(m => m.IsActive === true || m.IsActive === 1 || m.IsActive === "true" || m.IsActive === "1"));
         }
       } catch (e) { console.error("Meds load error:", e.message); }

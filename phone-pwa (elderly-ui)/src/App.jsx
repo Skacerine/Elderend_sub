@@ -124,12 +124,19 @@ export default function App() {
   }), []);
 
   useEffect(() => {
-    if (localStorage.getItem(STORAGE_KEY) === "true") handleEnable();
-    else setStatus("Paused");
+    if (localStorage.getItem(STORAGE_KEY) === "true") {
+      // Auto-resume: skip permission prompt (iOS blocks it outside user gestures).
+      // If permission was previously granted this will work; if not, it silently stays paused.
+      monitor.start({ skipPermission: true })
+        .catch(() => { setStatus("Paused"); localStorage.setItem(STORAGE_KEY, "false"); });
+    } else {
+      setStatus("Paused");
+    }
     return () => monitor.stop();
   }, [monitor]);
 
   async function handleEnable() {
+    // Called directly from button tap — iOS allows permission prompts here
     try { setErrorMessage(""); await monitor.start(); localStorage.setItem(STORAGE_KEY, "true"); }
     catch (e) { localStorage.setItem(STORAGE_KEY, "false"); setIsMonitoring(false); setStatus("Issue"); setErrorMessage(e.message || "Cannot start"); }
   }

@@ -106,31 +106,40 @@ export function createMotionMonitor({
     }, 450);
   }
 
-  async function start() {
-    if (active) return;
-
+  // iOS requires requestPermission to be called directly from a user gesture.
+  // Call requestPermission separately so it can be invoked from a click handler,
+  // then call startListening to attach the sensor once permission is granted.
+  async function requestPermission() {
     if (typeof window === "undefined" || typeof window.addEventListener !== "function") {
       throw new Error("Motion monitoring is not available in this environment.");
     }
-
     if (!window.isSecureContext) {
       throw new Error("Motion detection requires HTTPS or localhost.");
     }
-
     if (typeof DeviceMotionEvent === "undefined") {
       throw new Error("This device or browser does not support motion detection.");
     }
-
     if (typeof DeviceMotionEvent.requestPermission === "function") {
       const permission = await DeviceMotionEvent.requestPermission();
       if (permission !== "granted") {
-        throw new Error("Motion permission denied.");
+        throw new Error("Motion permission denied. Please allow motion access in your browser settings and try again.");
       }
     }
+  }
 
+  function startListening() {
+    if (active) return;
     window.addEventListener("devicemotion", handleMotion);
     active = true;
     onStart?.();
+  }
+
+  async function start({ skipPermission = false } = {}) {
+    if (active) return;
+    if (!skipPermission) {
+      await requestPermission();
+    }
+    startListening();
   }
 
   function stop() {

@@ -69,10 +69,10 @@ docker compose up --build
 
 ## Test Accounts
 
-| Role | Phone | Password |
-|------|-------|----------|
-| Guardian | 6588888888 | guard123 |
-| Elderly | 6591234567 | elder123 |
+| Role     | Phone      | Password |
+|----------|------------|----------|
+| Guardian | 6592369965 | guard123 |
+| Elderly  | 6592369965 | elder123 |
 
 ## Notification Settings
 
@@ -123,7 +123,7 @@ The total score determines the severity:
 
 | Score | Severity | Action |
 |-------|----------|--------|
-| **>= 100** | `CRITICAL` | High-risk fall — alert created, WebSocket broadcast, SMS/email sent, logged to OutSystems |
+| **>= 100** | `ElEVATED` | High-risk fall — alert created, WebSocket broadcast, SMS/email sent, logged to OutSystems |
 | **70 – 99** | `FALLEN` | Fall detected — alert created, WebSocket broadcast, SMS/email sent, logged to OutSystems |
 | 50 – 69 | `NORMAL` | No alert |
 | < 50 | `ATREST` | No alert |

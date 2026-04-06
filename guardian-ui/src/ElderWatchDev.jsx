@@ -241,6 +241,7 @@ export default function ElderWatchDev() {
       onMessage: (message) => {
         if (message.type === "drop_alert") {
           const alertData = message.data || message.incident || {};
+          if (String(alertData.elderlyId) !== String(ELDERLY_ID)) return;
           setPopupAlert({
             source: "guardian",
             elderlyId: alertData.elderlyId || "—",

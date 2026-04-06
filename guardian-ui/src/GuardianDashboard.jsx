@@ -70,11 +70,12 @@ export default function GuardianDashboard() {
         };
 
         if (message.type === "drop_alert") {
+          const alertData = message.data || message.incident || {};
+          if (String(alertData.elderlyId) !== String(user?.elderlyId)) return;
           setMessages((prev) => [enrichedMessage, ...prev].slice(0, 20));
           setActiveAlert(enrichedMessage);
           triggerGuardianAlert();
 
-          const alertData = message.data || message.incident || {};
           setPopupAlert({
             source: "guardian",
             elderlyId: alertData.elderlyId || "—",

@@ -85,6 +85,59 @@ SMS and email recipients default to environment variables in `docker-compose.yml
 
 Can also be changed at runtime via the Settings page in the Guardian UI.
 
+## Fall Detection Algorithm
+
+The system uses a two-stage pipeline to detect phone drops (potential falls):
+
+### Stage 1 — Client-Side Filtering (`phone-pwa/src/motionSensor.js`)
+
+The phone's browser captures accelerometer and gyroscope data via the `DeviceMotionEvent` API, maintaining a **3-second rolling window** of samples.
+
+Each sensor reading is checked against quick thresholds to see if the motion is **suspicious**:
+
+| Check | Threshold | What it catches |
+|-------|-----------|-----------------|
+| Freefall | `minAcceleration < 8 m/s²` | Sudden drop in acceleration (gravity disappears during freefall) |
+| High impact | `peakAcceleration > 11 m/s²` | Spike on hitting the ground |
+| Rapid spin | `peakRotationRate > 90°/s` | Phone tumbling mid-air |
+| Post-impact stillness | `> 1000 ms` | Phone lying motionless after impact |
+
+If any threshold is met, the system waits **450 ms** to collect more data, then sends the feature vector to the server. If a stronger signal arrives while waiting, the timer resets so the best data is always sent. After sending, there is a **1.5-second cooldown** before the next detection can fire.
+
+### Stage 2 — Server-Side Scoring (`alert_ms/server.js`)
+
+The server runs a **weighted scoring algorithm** on the received features:
+
+| Condition | Points |
+|-----------|--------|
+| `minAcceleration < 8` | +25 |
+| `minAcceleration < 4` | +15 bonus |
+| `peakRotationRate > 80` | +20 |
+| `peakRotationRate > 150` | +10 bonus |
+| `peakAcceleration > 11` | +25 |
+| `peakAcceleration > 16` | +15 bonus |
+| Impact + stillness > 800 ms | +10 |
+| Impact + stillness > 1500 ms | +10 bonus |
+
+The total score determines the severity:
+
+| Score | Severity | Action |
+|-------|----------|--------|
+| **>= 80** | `FALLEN` | Alert created, WebSocket broadcast, SMS/email sent, logged to OutSystems |
+| 50 – 79 | `NORMAL` | No alert |
+| < 50 | `ATREST` | No alert |
+
+### Flow
+
+```
+Phone sensor event
+  → Client checks thresholds (isSuspicious)
+  → 450ms collection window
+  → POST /motion/sample to alert_ms
+  → Server scores features
+  → If score >= 80: create incident → notify guardians via WebSocket, SMS, email
+```
+
 ## Project Structure
 
 ```

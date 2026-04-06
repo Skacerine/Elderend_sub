@@ -49,7 +49,7 @@ export function createMotionMonitor({
     if (!features) return false;
 
     return (
-      features.minAcceleration < 8 ||
+      features.minAcceleration < 6 ||
       features.peakAcceleration > 11 ||
       features.peakRotationRate > 90 ||
       features.postImpactStillnessMs > 1000
@@ -80,11 +80,10 @@ export function createMotionMonitor({
       return;
     }
 
-    // If we already scheduled analysis, restart it so stronger signals
-    // are not ignored in favour of an earlier, weaker reading.
+    // If we already scheduled analysis, do not schedule again.
+    // This lets us collect a fuller drop sequence before sending.
     if (pendingAnalysis) {
-      window.clearTimeout(pendingAnalysis);
-      pendingAnalysis = null;
+      return;
     }
 
     pendingAnalysis = window.setTimeout(() => {
@@ -97,7 +96,7 @@ export function createMotionMonitor({
         return;
       }
 
-      cooldownUntil = analysisTime + 1500;
+      cooldownUntil = analysisTime + 3000;
 
       Promise.resolve(onFeatureReady?.(finalFeatures)).catch((error) => {
         onError?.(error.message || "Failed to process motion event.");

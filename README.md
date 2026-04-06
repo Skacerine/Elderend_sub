@@ -97,12 +97,12 @@ Each sensor reading is checked against quick thresholds to see if the motion is 
 
 | Check | Threshold | What it catches |
 |-------|-----------|-----------------|
-| Freefall | `minAcceleration < 8 m/s²` | Sudden drop in acceleration (gravity disappears during freefall) |
+| Freefall | `minAcceleration < 6 m/s²` | Sudden drop in acceleration (gravity disappears during freefall) |
 | High impact | `peakAcceleration > 11 m/s²` | Spike on hitting the ground |
 | Rapid spin | `peakRotationRate > 90°/s` | Phone tumbling mid-air |
 | Post-impact stillness | `> 1000 ms` | Phone lying motionless after impact |
 
-If any threshold is met, the system waits **450 ms** to collect more data, then sends the feature vector to the server. If a stronger signal arrives while waiting, the timer resets so the best data is always sent. After sending, there is a **1.5-second cooldown** before the next detection can fire.
+If any threshold is met, the system waits **450 ms** to collect more data, then sends the feature vector to the server. After sending, there is a **3-second cooldown** before the next detection can fire.
 
 ### Stage 2 — Server-Side Scoring (`alert_ms/server.js`)
 
@@ -110,21 +110,21 @@ The server runs a **weighted scoring algorithm** on the received features:
 
 | Condition | Points |
 |-----------|--------|
-| `minAcceleration < 8` | +25 |
-| `minAcceleration < 4` | +15 bonus |
-| `peakRotationRate > 80` | +20 |
-| `peakRotationRate > 150` | +10 bonus |
-| `peakAcceleration > 11` | +25 |
-| `peakAcceleration > 16` | +15 bonus |
-| Impact + stillness > 800 ms | +10 |
-| Impact + stillness > 1500 ms | +10 bonus |
+| `minAcceleration < 6` | +25 |
+| `minAcceleration < 3` | +15 bonus |
+| `peakRotationRate > 100` | +20 |
+| `peakRotationRate > 180` | +10 bonus |
+| `peakAcceleration > 12` | +25 |
+| `peakAcceleration > 18` | +15 bonus |
+| Impact + stillness > 1000 ms | +10 |
+| Impact + stillness > 2000 ms | +10 bonus |
 
 The total score determines the severity:
 
 | Score | Severity | Action |
 |-------|----------|--------|
-| **>= 80** | `FALLEN` | Alert created, WebSocket broadcast, SMS/email sent, logged to OutSystems |
-| 50 – 79 | `NORMAL` | No alert |
+| **>= 100** | `FALLEN` | Alert created, WebSocket broadcast, SMS/email sent, logged to OutSystems |
+| 65 – 99 | `NORMAL` | No alert |
 | < 50 | `ATREST` | No alert |
 
 ### Flow
@@ -135,7 +135,7 @@ Phone sensor event
   → 450ms collection window
   → POST /motion/sample to alert_ms
   → Server scores features
-  → If score >= 80: create incident → notify guardians via WebSocket, SMS, email
+  → If score >= 100: create incident → notify guardians via WebSocket, SMS, email
 ```
 
 ## Project Structure
